@@ -128,13 +128,13 @@ def add_job(csv_file, describe_dict, limit=None):
 
 def init_go_(num_jobs, arrivals):
     random.seed(0)
-    cur_time = 0
-    csv_file='/home/tst/Documents/clusterdata/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
+
+    csv_file='traces/pai/pai_job_no_estimate_100K.csv'
     job_list = add_job(csv_file, None, limit=num_jobs)
     print('job_list size:')
     print(len(job_list))
     if (num_jobs is not None) and num_jobs <= len(job_list):
-        random.seed(time.time())
+        #random.seed(time.time())
         random.shuffle(job_list)
 
         job_list = job_list[:num_jobs]

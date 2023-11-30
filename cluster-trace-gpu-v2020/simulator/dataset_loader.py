@@ -1,10 +1,7 @@
 import random
 import csv
-import copy
 import numpy as np
-import pandas as pd
 import random
-import time
 def set_job_list_arrival_time(job_list, arrival_rate=None, interval=60, shuffle_order=False):
     """
     job_list: jobs to execute in this run
@@ -21,7 +18,7 @@ def set_job_list_arrival_time(job_list, arrival_rate=None, interval=60, shuffle_
 
     arrival_counter = 0
     for job in job_list:
-        arrival_time = (arrival_counter // arrival_rate) # * interval
+        #arrival_time = (arrival_counter // arrival_rate) # * interval
         job['submit_time'] = arrival_time
         arrival_counter += 1
     
@@ -46,7 +43,9 @@ def _add_job(job_list, job_dict, describe_dict=None):
         if key not in job_dict or job_dict[key] == '':
             if key in ['num_cpu', 'num_gpu']:
                 job_dict[key] = 0
-            else:  # key in ['submit_time', 'num_inst']
+            elif key == 'submit_time':  
+                job_dict[key] = int(job_dict[key]) - 3
+            else:
                 job_dict[key] = 1
         else:
             if key in ['num_cpu', 'num_gpu']:  # in %
@@ -129,16 +128,18 @@ def add_job(csv_file, describe_dict, limit=None):
 def init_go_(num_jobs, arrivals):
     random.seed(0)
 
-    csv_file='traces/pai/pai_job_no_estimate_100K.csv'
+    csv_file='/mnt/c/Users/galax/Desktop/Github Projects/Plebiscitotest/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
     job_list = add_job(csv_file, None, limit=num_jobs)
     print('job_list size:')
     print(len(job_list))
     if (num_jobs is not None) and num_jobs <= len(job_list):
         #random.seed(time.time())
-        random.shuffle(job_list)
+        #random.shuffle(job_list)
 
         job_list = job_list[:num_jobs]
-    job_list = set_job_list_arrival_time(job_list, arrivals)
+    #job_list = set_job_list_arrival_time(job_list, arrivals)
+    # print(job_list)
+    # sys.exit()
     return job_list
 
 

@@ -13,7 +13,7 @@ import sys
 from os import path
 import pandas as pd
 
-sys.path.append("Plebiscito")
+sys.path.append("/mnt/c/Users/galax/Desktop/Github Projects/Plebiscitotest/cluster-trace-gpu-v2020/simulator/Plebiscito")
 from src.simulator import Simulator_Plebiscito
 from src.config import Utility, DebugLevel, SchedulingAlgorithm
 
@@ -26,7 +26,7 @@ CSV_FILE = 'pai_job_no_estimate_100K.csv'
 
 parser = argparse.ArgumentParser(description='Simulator.')
 parser.add_argument("-r", "--arrival_rate", help="Arrival Rate", type=int, default=10)
-parser.add_argument("-n", "--num_jobs", help="Num of Jobs", type=int, default=1000)
+parser.add_argument("-n", "--num_jobs", help="Num of Jobs", type=int, default=1500)
 parser.add_argument("-g", "--num_gpus", help="Num of GPUs", type=int, default=6500)
 parser.add_argument("-p", "--repeat", help='Repeat', type=int, default=1)
 parser.add_argument("-k", "--pack", dest='packing_policy', action='store_true')
@@ -148,7 +148,7 @@ for job_dict in dataset:
 dataset = pd.DataFrame(dataset)
 
 simulator = Simulator_Plebiscito(filename="1",
-                          n_nodes=50,
+                          n_nodes=100,
                           node_bw=1000000000,
                           n_jobs=NUM_JOBS,
                           n_client=3,
@@ -160,12 +160,29 @@ simulator = Simulator_Plebiscito(filename="1",
                           utility=Utility.LGF,
                           debug_level=DebugLevel.INFO,
                           scheduling_algorithm=SchedulingAlgorithm.FIFO,
-                          decrement_factor=0.3,
+                          decrement_factor=1,
+                          split=True)
+simulator.run()
+
+simulator = Simulator_Plebiscito(filename="1-1",
+                          n_nodes=100,
+                          node_bw=1000000000,
+                          n_jobs=NUM_JOBS,
+                          n_client=3,
+                          enable_logging=False,
+                          use_net_topology=False,
+                          progress_flag=False,
+                          dataset=dataset,
+                          alpha=1,
+                          utility=Utility.LGF,
+                          debug_level=DebugLevel.INFO,
+                          scheduling_algorithm=SchedulingAlgorithm.FIFO,
+                          decrement_factor=0.25,
                           split=True)
 simulator.run()
 
 simulator = Simulator_Plebiscito(filename="2",
-                          n_nodes=50,
+                          n_nodes=100,
                           node_bw=1000000000,
                           n_jobs=NUM_JOBS,
                           n_client=3,
@@ -178,11 +195,11 @@ simulator = Simulator_Plebiscito(filename="2",
                           debug_level=DebugLevel.INFO,
                           scheduling_algorithm=SchedulingAlgorithm.FIFO,
                           decrement_factor=1,
-                          split=True)
+                          split=False)
 simulator.run()
 
 simulator = Simulator_Plebiscito(filename="3",
-                          n_nodes=50,
+                          n_nodes=100,
                           node_bw=1000000000,
                           n_jobs=NUM_JOBS,
                           n_client=3,
@@ -193,83 +210,30 @@ simulator = Simulator_Plebiscito(filename="3",
                           alpha=1,
                           utility=Utility.LGF,
                           debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.FIFO,
-                          decrement_factor=0.3,
-                          split=False)
+                          scheduling_algorithm=SchedulingAlgorithm.SDF,
+                          decrement_factor=1,
+                          split=True)
+simulator.run()
+
+simulator = Simulator_Plebiscito(filename="3-3",
+                          n_nodes=100,
+                          node_bw=1000000000,
+                          n_jobs=NUM_JOBS,
+                          n_client=3,
+                          enable_logging=False,
+                          use_net_topology=False,
+                          progress_flag=False,
+                          dataset=dataset,
+                          alpha=1,
+                          utility=Utility.LGF,
+                          debug_level=DebugLevel.INFO,
+                          scheduling_algorithm=SchedulingAlgorithm.SDF,
+                          decrement_factor=0.25,
+                          split=True)
 simulator.run()
 
 simulator = Simulator_Plebiscito(filename="4",
-                          n_nodes=50,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.FIFO,
-                          decrement_factor=1,
-                          split=False)
-simulator.run()
-
-# ------
-
-simulator = Simulator_Plebiscito(filename="5",
-                          n_nodes=50,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.SDF,
-                          decrement_factor=0.3,
-                          split=True)
-simulator.run()
-
-simulator = Simulator_Plebiscito(filename="6",
-                          n_nodes=50,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.SDF,
-                          decrement_factor=1,
-                          split=True)
-simulator.run()
-
-simulator = Simulator_Plebiscito(filename="7",
-                          n_nodes=50,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.SDF,
-                          decrement_factor=0.3,
-                          split=False)
-simulator.run()
-
-simulator = Simulator_Plebiscito(filename="8",
-                          n_nodes=50,
+                          n_nodes=100,
                           node_bw=1000000000,
                           n_jobs=NUM_JOBS,
                           n_client=3,

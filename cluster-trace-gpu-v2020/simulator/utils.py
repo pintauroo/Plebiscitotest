@@ -26,7 +26,7 @@ GPU_TYPE_INT_DICT = {
 }
 
 
-def print_fn(log, level=1):
+def print_fn(log, level=0):
     LOG_LEVEL_DEBUG = 0
     LOG_LEVEL_INFO = 1
     LOG_LEVEL_WARNING = 2

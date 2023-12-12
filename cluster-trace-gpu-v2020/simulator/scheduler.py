@@ -21,41 +21,46 @@ class Scheduler:
         job_list = cluster.job_list  # Take cluster.job_list
 
         # Trying skipping allocation as early as possible
-        if len(job_list) <= 0:
+        if len(job_list) == 0 and not cluster.jobs_done:
+            return -2
+        elif len(job_list) <= 0: # and cluster.jobs_done:
             return -1
-        ig, ic = cluster.idl_gpus, cluster.idl_cpus
-        this_time_snapshot = [ig, ic, len(job_list), 0]  # 0: no job allocated.
-        if self.last_time_snapshot == this_time_snapshot:  # exactly the same
-            if self.verbose:
-                print_fn("[{}] Last time snapshot == this time snapshot: {}. Bypass.".format(self.cluster.cur_time, this_time_snapshot))
-            return 0
-        job_min_gpu, job_min_cpu = min(job_list, key=lambda j: j['num_inst'] * j['num_gpu']), min(job_list, key=lambda j: j['num_inst'] * j['num_cpu'])
-        if (ig <= 0 or job_min_gpu['num_inst'] * job_min_gpu['num_gpu'] > ig) and (ic <= 0 or job_min_cpu['num_inst'] * job_min_cpu['num_cpu'] > ic):
-            self.last_time_snapshot = this_time_snapshot
-            return 0
-
-        if self.verbose:
-            print_fn("job_min_gpu, job_min_cpu = {:.1f}, {:.1f}".format(job_min_gpu['num_gpu'], job_min_cpu['num_cpu']))
-
-        job_to_allocate_cache = []
-        # Greedy algorithm or Greedy + load balancing
-        if self.alloc_policy in ALLOC_POLICY_DICT.keys():
-            # Heavy action
-            self.alloc_job_sort(job_list, cluster.job_runn_list)
-            for job_a in job_list:
-                succ_alloc = self.try_allocate_job_to_cluster(job_a, cluster)
-                if succ_alloc == 1:
-                    job_to_allocate_cache.append(job_a)
-                elif succ_alloc == -1:
-                    break
-                # else, e.g., succ_alloc == 0: pass/continue
+        
+        
         else:
-            raise KeyError("Uncaptured Allocation Policy Input: %d" % self.alloc_policy)
+            ig, ic = cluster.idl_gpus, cluster.idl_cpus
+            this_time_snapshot = [ig, ic, len(job_list), 0]  # 0: no job allocated.
+            if self.last_time_snapshot == this_time_snapshot:  # exactly the same
+                if self.verbose:
+                    print_fn("[{}] Last time snapshot == this time snapshot: {}. Bypass.".format(self.cluster.cur_time, this_time_snapshot))
+                return 0
+            job_min_gpu, job_min_cpu = min(job_list, key=lambda j: j['num_inst'] * j['num_gpu']), min(job_list, key=lambda j: j['num_inst'] * j['num_cpu'])
+            if (ig <= 0 or job_min_gpu['num_inst'] * job_min_gpu['num_gpu'] > ig) and (ic <= 0 or job_min_cpu['num_inst'] * job_min_cpu['num_cpu'] > ic):
+                self.last_time_snapshot = this_time_snapshot
+                return 0
 
-        this_time_snapshot[-1] = len(job_to_allocate_cache)  # num of jobs allocated
-        self.last_time_snapshot = this_time_snapshot
-        for job_a in job_to_allocate_cache:
-            cluster.job_list.remove(job_a)
+            if self.verbose:
+                print_fn("job_min_gpu, job_min_cpu = {:.1f}, {:.1f}".format(job_min_gpu['num_gpu'], job_min_cpu['num_cpu']))
+
+            job_to_allocate_cache = []
+            # Greedy algorithm or Greedy + load balancing
+            if self.alloc_policy in ALLOC_POLICY_DICT.keys():
+                # Heavy action
+                self.alloc_job_sort(job_list, cluster.job_runn_list)
+                for job_a in job_list:
+                    succ_alloc = self.try_allocate_job_to_cluster(job_a, cluster)
+                    if succ_alloc == 1:
+                        job_to_allocate_cache.append(job_a)
+                    elif succ_alloc == -1:
+                        break
+                    # else, e.g., succ_alloc == 0: pass/continue
+            else:
+                raise KeyError("Uncaptured Allocation Policy Input: %d" % self.alloc_policy)
+
+            this_time_snapshot[-1] = len(job_to_allocate_cache)  # num of jobs allocated
+            self.last_time_snapshot = this_time_snapshot
+            for job_a in job_to_allocate_cache:
+                cluster.job_list.remove(job_a)
 
     def alloc_job_sort(self, job_list, job_runn_list=None):
         if self.alloc_policy == 0:  # short_duration_first

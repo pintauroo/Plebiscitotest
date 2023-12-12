@@ -33,7 +33,7 @@ class Cluster:
         self.job_full_list = large_job_pruning(job_list, self.num_gpus, self.num_cpus)
         self.job_full_list.sort(key=lambda j: -j['submit_time'])
         self.job_list = []
-        self.retrieve_job_from_full_list()  # feed self.user_job_queue into self.job_list
+        self.jobs_done = self.retrieve_job_from_full_list()  # feed self.user_job_queue into self.job_list
 
         self.job_history = JobHistory()
 
@@ -62,13 +62,19 @@ class Cluster:
         self.idle_cluster_counter = 0
 
     def retrieve_job_from_full_list(self):
-        while len(self.job_full_list) > 0:
-            job = self.job_full_list[-1]
-            if job['submit_time'] <= self.cur_time:
-                job = self.job_full_list.pop()
-                self.job_list.append(job)
-            else:
-                return 0
+        if len(self.job_full_list) > 0:
+            while len(self.job_full_list) > 0:
+                job = self.job_full_list[-1]
+                if job['submit_time'] <= self.cur_time:
+                    job = self.job_full_list.pop()
+                    self.job_list.append(job)
+                else:
+                    if len(self.job_full_list) == 0:
+                        self.jobs_done = True
+                    self.jobs_done = False
+                    return 
+        else:
+            self.jobs_done = True
 
     def sorted_node_list(self):
         node_list = list(self.node_dict.values())
@@ -83,6 +89,7 @@ class Cluster:
         self.cur_time += delta
         if self.export_cluster_util and self.cur_time % 10000 == 0:
             self.record_cluster_util()
+
         self.retrieve_job_from_full_list()  # update self.job_list
         job_runn_list = self.job_runn_list
         if len(job_runn_list) > 0:

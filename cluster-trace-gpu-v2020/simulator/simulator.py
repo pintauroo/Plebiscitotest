@@ -11,6 +11,7 @@ from node import Node
 from scheduler import Scheduler
 import csv
 
+import os
 
 """ Jobs
 OrderedDict
@@ -107,16 +108,16 @@ class Simulator:
         # for _ in range(10):  # low-ended machines first
         #     node_list.append(Node(node_id, 0, 96, gpu_type='CPU'))
         #     node_id += 1
-        for _ in range(10):  # low-ended machines first
+        for _ in range(10*2):  # low-ended machines first
             node_list.append(Node(node_id, 8, 96, gpu_type='MISC'))
             node_id += 1
-        for _ in range(18):  # low-ended machines first
+        for _ in range(18*2):  # low-ended machines first
             node_list.append(Node(node_id, 2, 96, gpu_type='T4'))
             node_id += 1
-        for _ in range(19):  # low-ended machines first
+        for _ in range(19*2):  # low-ended machines first
             node_list.append(Node(node_id, 2, 64, gpu_type='P100'))
             node_id += 1
-        for _ in range(3):
+        for _ in range(3*2):
             node_list.append(Node(node_id, 8, 96, gpu_type='V100'))
             node_id += 1
         return node_list
@@ -206,6 +207,8 @@ class Simulator:
         """
         result = []
         dic={}
+        directory = 'res/'
+
         for repeat_id in range(repeat):
             self.init_go(num_jobs=num_jobs)
 
@@ -235,7 +238,9 @@ class Simulator:
 
             # print(self.cluster.job_history) # .job_done_list.sort(key=lambda e: e['job_id'])
             # Save the dictionary to a CSV file
-            with open('data_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open('res/data_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(dic.keys())
                 writer.writerows(zip(*dic.values()))
@@ -245,7 +250,7 @@ class Simulator:
             # ...
 
             # Write jobbe list to CSV file
-            with open('jobs_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
+            with open('res/jobs_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(['job_id', 'submit_time', 'duration', 'jct', 'num_inst', 'gpu_type', 'num_cpu', 'num_gpu', 'size', 'wasted', 'resource', 'node', 'allocated_at', 'waiting_time', 'progress'])
                 for job in jobbe:
@@ -263,17 +268,25 @@ class Simulator:
 
             # Allocate job
             stop = self.scheduler.alloc_job(self.cluster)
-            if stop == -1:
-                self.exit_flag = 1
-                print('KTM!!!!')
 
-            # Jobs tic and global cur_time += delta
-            tic_return_value = self.cluster.tic_job(delta)
-            if tic_return_value >= 0:
-                self.cur_time = tic_return_value
-            else:
+            if stop == -1:
+                self.exit_flag = 1 
+                # print('KTM!!!!')
+
+            if stop == -2:
+                # print('empty queue' + str(self.cur_time))
                 self.cur_time = self.cur_time + delta
-                self.exit_flag = 1
+                self.cluster.cur_time = self.cur_time
+                self.cluster.retrieve_job_from_full_list()
+
+            else:
+                # Jobs tic and global cur_time += delta
+                tic_return_value = self.cluster.tic_job(delta)
+                if tic_return_value >= 0:
+                    self.cur_time = tic_return_value
+                else:
+                    self.cur_time = self.cur_time + delta
+                    self.exit_flag = 1
         else:
             print_fn("TIMEOUT {} with jobs {}".format(self.cur_time, self.cluster.job_list))
             self.exit_flag = 1

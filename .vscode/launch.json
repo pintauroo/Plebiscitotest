@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "python": "/home/tst/Documents/clusterdata/.venv/bin/python"
+            "python": "/home/andrea/Plebiscitotest/.venv/bin/python"
         }
     ]
 }

@@ -2,6 +2,7 @@ import random
 import csv
 import numpy as np
 import random
+import os
 def set_job_list_arrival_time(job_list, arrival_rate=None, interval=60, shuffle_order=False):
     """
     job_list: jobs to execute in this run
@@ -127,8 +128,9 @@ def add_job(csv_file, describe_dict, limit=None):
 
 def init_go_(num_jobs, arrivals):
     random.seed(0)
-
-    csv_file='/mnt/c/Users/galax/Desktop/Github Projects/Plebiscitotest/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
+    current_directory = os.getcwd()
+    # csv_file=str(current_directory)+'/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
+    csv_file=str(current_directory)+'/traces/pai/pai_job_no_estimate_100K.csv'
     job_list = add_job(csv_file, None, limit=num_jobs)
     print('job_list size:')
     print(len(job_list))

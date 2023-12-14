@@ -108,16 +108,16 @@ class Simulator:
         # for _ in range(10):  # low-ended machines first
         #     node_list.append(Node(node_id, 0, 96, gpu_type='CPU'))
         #     node_id += 1
-        for _ in range(10*2):  # low-ended machines first
+        for _ in range(10):  # low-ended machines first
             node_list.append(Node(node_id, 8, 96, gpu_type='MISC'))
             node_id += 1
-        for _ in range(18*2):  # low-ended machines first
+        for _ in range(18):  # low-ended machines first
             node_list.append(Node(node_id, 2, 96, gpu_type='T4'))
             node_id += 1
-        for _ in range(19*2):  # low-ended machines first
+        for _ in range(19):  # low-ended machines first
             node_list.append(Node(node_id, 2, 64, gpu_type='P100'))
             node_id += 1
-        for _ in range(3*2):
+        for _ in range(3):
             node_list.append(Node(node_id, 8, 96, gpu_type='V100'))
             node_id += 1
         return node_list

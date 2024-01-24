@@ -13,9 +13,15 @@ import sys
 from os import path
 import pandas as pd
 
-sys.path.append("/home/andrea/Plebiscitotest/cluster-trace-gpu-v2020/simulator/Plebiscito")
+
+if len(sys.argv) != 2:
+    print("Usage: python run_simulator.py <index>")
+    sys.exit(1)
+    
+# sys.path.append(os.getcwd()+"/Plebiscito")
+sys.path.append("/home/crownlabs/Plebiscitotest/cluster-trace-gpu-v2020/simulator/Plebiscito")
 from src.simulator import Simulator_Plebiscito
-from src.config import Utility, DebugLevel, SchedulingAlgorithm
+from src.config import Utility, DebugLevel, SchedulingAlgorithm, ApplicationGraphType
 
 DATE = "%02d%02d" % (time.localtime().tm_mon, time.localtime().tm_mday)
 
@@ -24,19 +30,24 @@ CSV_FILE_PATH = Path(__file__).parent / 'traces/pai/'
 DESCRIBE_FILE = None
 CSV_FILE = 'pai_job_no_estimate_100K.csv'
 
-parser = argparse.ArgumentParser(description='Simulator.')
-parser.add_argument("-r", "--arrival_rate", help="Arrival Rate", type=int, default=10)
-parser.add_argument("-n", "--num_jobs", help="Num of Jobs", type=int, default=1500)
-parser.add_argument("-g", "--num_gpus", help="Num of GPUs", type=int, default=6500)
-parser.add_argument("-p", "--repeat", help='Repeat', type=int, default=1)
-parser.add_argument("-k", "--pack", dest='packing_policy', action='store_true')
-parser.add_argument("-b", "--balance", dest='packing_policy', action='store_false')
-parser.set_defaults(packing_policy=False)
-args = parser.parse_args()
-NUM_JOBS = args.num_jobs
-ARRIVAL_RATE = args.arrival_rate
-NUM_GPUS = args.num_gpus
-REPEAT = args.repeat
+
+
+# Get the index argument
+rep = sys.argv[1]
+
+# parser = argparse.ArgumentParser(description='Simulator.')
+# parser.add_argument("-r", "--arrival_rate", help="Arrival Rate", type=int, default=10)
+# parser.add_argument("-n", "--num_jobs", help="Num of Jobs", type=int, default=1000)
+# parser.add_argument("-g", "--num_gpus", help="Num of GPUs", type=int, default=6500)
+# parser.add_argument("-p", "--repeat", help='Repeat', type=int, default=1)
+# parser.add_argument("-k", "--pack", dest='packing_policy', action='store_true')
+# parser.add_argument("-b", "--balance", dest='packing_policy', action='store_false')
+# parser.set_defaults(packing_policy=False)
+# args = parser.parse_args()
+NUM_JOBS = 1000 #args.num_jobs
+ARRIVAL_RATE =0 # args.arrival_rate
+NUM_GPUS = 0 #args.num_gpus
+REPEAT =1 # args.repeat
 # SORT_NODE_POLICY = 0 if args.packing_policy is True else 3  # 0: packing, 3: max-min balancing.
 SORT_NODE_POLICY = 3
 
@@ -54,8 +65,8 @@ HETERO = True  # heterogeneous cluster
 # HETERO = False
 PATTERN = 0  # Cluster capacity varying pattern
 
-# GPU_TYPE_MATCHING = 1 # GPU type perfect match
-GPU_TYPE_MATCHING = 2  # Only V100 cannot compromise
+GPU_TYPE_MATCHING = 1 # GPU type perfect match
+# GPU_TYPE_MATCHING = 2  # Only V100 cannot compromise
 # GPU_TYPE_MATCHING = 0
 
 # EXPORT_JOB_STATS = False
@@ -95,232 +106,147 @@ print(print_str)
 print_fn(print_str, level=2)
 
 
-dataset = init_go_(NUM_JOBS, ARRIVAL_RATE)
 
+for i in range(1):
+# for rep in range(10, 21):
+# for rep in range(20, 31):
+    # dataset=[]
+    print(rep)
+    dataset = init_go_(NUM_JOBS, ARRIVAL_RATE)
 
-# for alloc_policy in [0, 1, 2, 4, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-for alloc_policy in [0, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-    # for preempt_policy in [2]:  # 2LGF
-    preempt_policy =2
-    for sorting_policy in [0, 1, 2, 3]:  
-        key = (alloc_policy, preempt_policy)
-        print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
+    latest=0
+    for d in dataset:
+        # print(d['resource'], d['gpu_type'])
+        # if d['gpu_type'] == 'V100' or d['gpu_type'] == 'MISC':
+            if int(d['submit_time']) >= latest:
+                # print(latest, d['submit_time'])
+                latest=d['submit_time']
 
-        # running
-        start_time = time.time()
-        print_fn("\n###### %s ######" % print_key)
+            # print(d['job_id'])
+            # dataset.append(d)
 
-        simulator = Simulator(
-            csv_file=CSV_FILE_PATH / CSV_FILE,
-            alloc_policy=alloc_policy,
-            preempt_policy=preempt_policy,
-            sort_node_policy=sorting_policy,
-            num_nodes=NUM_NODES,
-            random_seed=RANDOM_SEED,
-            max_time=MAX_TIME,
-            num_spare_node=NUM_SPARE_NODE,
-            pattern=PATTERN,
-            hetero=HETERO,
-            num_gpus=NUM_GPUS,
-            num_cpus=NUM_CPUS,
-            describe_file=describe_file,
-            log_file=log_file,
-            export_job_stats=EXPORT_JOB_STATS,
-            export_cluster_util=EXPORT_CLUSTER_UTIL,
-            arrival_rate=ARRIVAL_RATE,
-            num_jobs_limit=NUM_JOBS,
-            gpu_type_matching=GPU_TYPE_MATCHING,
-            verbose=VERBOSE,
-            dataset=dataset)
-        results = simulator.simulator_go(repeat=REPEAT)
+    print('latest job at: ', latest)
+    # for alloc_policy in [0, 1, 2, 4, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+    # for alloc_policy in [0, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+    for alloc_policy in [8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+        # for preempt_policy in [2]:  # 2LGF
+        preempt_policy =2
+        # for sorting_policy in [0, 1, 2, 3]:  
+        for sorting_policy in [3]:  
+            print('INIT,', str(alloc_policy),', ', str(sorting_policy))
 
+            key = (alloc_policy, preempt_policy)
+            print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
 
+            # running
+            start_time = time.time()
+            print_fn("\n###### %s ######" % print_key)
 
-for job_dict in dataset:
-    job_dict['submit_time'] += 1
-    job_dict['bw'] = 0
-    job_dict["exec_time"] = -1
-    job_dict["bw"] = 0 #float(job_dict["write_count"])
-    job_dict["final_node_allocation"] = []
-    job_dict["final_gpu_allocation"] = []
-    job_dict["deadline"] = job_dict['submit_time'] + job_dict['duration'] * (1 + 0.1 * random.random()) # 10% deadline slack
-
-dataset = pd.DataFrame(dataset)
-
-simulator = Simulator_Plebiscito(filename="1NoSplit",
-                          n_nodes=100,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.FIFO,
-                          decrement_factor=0,
-                          split=False)
-simulator.run()
-
-simulator = Simulator_Plebiscito(filename="1Split",
-                          n_nodes=100,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.FIFO,
-                          decrement_factor=0,
-                          split=True)
-simulator.run()
-
-# simulator = Simulator_Plebiscito(filename="1-1",
-#                           n_nodes=100,
-#                           node_bw=1000000000,
-#                           n_jobs=NUM_JOBS,
-#                           n_client=3,
-#                           enable_logging=False,
-#                           use_net_topology=False,
-#                           progress_flag=False,
-#                           dataset=dataset,
-#                           alpha=1,
-#                           utility=Utility.LGF,
-#                           debug_level=DebugLevel.INFO,
-#                           scheduling_algorithm=SchedulingAlgorithm.FIFO,
-#                           decrement_factor=0.25,
-#                           split=True)
-# simulator.run()
-
-# simulator = Simulator_Plebiscito(filename="2",
-#                           n_nodes=100,
-#                           node_bw=1000000000,
-#                           n_jobs=NUM_JOBS,
-#                           n_client=3,
-#                           enable_logging=False,
-#                           use_net_topology=False,
-#                           progress_flag=False,
-#                           dataset=dataset,
-#                           alpha=1,
-#                           utility=Utility.LGF,
-#                           debug_level=DebugLevel.INFO,
-#                           scheduling_algorithm=SchedulingAlgorithm.FIFO,
-#                           decrement_factor=1,
-#                           split=False)
-# simulator.run()
-
-simulator = Simulator_Plebiscito(filename="3Split",
-                          n_nodes=100,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.SDF,
-                          decrement_factor=1,
-                          split=True)
-simulator.run()
-
-
-simulator = Simulator_Plebiscito(filename="3NoSlit",
-                          n_nodes=100,
-                          node_bw=1000000000,
-                          n_jobs=NUM_JOBS,
-                          n_client=3,
-                          enable_logging=False,
-                          use_net_topology=False,
-                          progress_flag=False,
-                          dataset=dataset,
-                          alpha=1,
-                          utility=Utility.LGF,
-                          debug_level=DebugLevel.INFO,
-                          scheduling_algorithm=SchedulingAlgorithm.SDF,
-                          decrement_factor=1,
-                          split=False)
-simulator.run()
-
-# simulator = Simulator_Plebiscito(filename="3-3",
-#                           n_nodes=100,
-#                           node_bw=1000000000,
-#                           n_jobs=NUM_JOBS,
-#                           n_client=3,
-#                           enable_logging=False,
-#                           use_net_topology=False,
-#                           progress_flag=False,
-#                           dataset=dataset,
-#                           alpha=1,
-#                           utility=Utility.LGF,
-#                           debug_level=DebugLevel.INFO,
-#                           scheduling_algorithm=SchedulingAlgorithm.SDF,
-#                           decrement_factor=0.25,
-#                           split=True)
-# simulator.run()
-
-# simulator = Simulator_Plebiscito(filename="4",
-#                           n_nodes=100,
-#                           node_bw=1000000000,
-#                           n_jobs=NUM_JOBS,
-#                           n_client=3,
-#                           enable_logging=False,
-#                           use_net_topology=False,
-#                           progress_flag=False,
-#                           dataset=dataset,
-#                           alpha=1,
-#                           utility=Utility.LGF,
-#                           debug_level=DebugLevel.INFO,
-#                           scheduling_algorithm=SchedulingAlgorithm.SDF,
-#                           decrement_factor=1,
-#                           split=False)
-# simulator.run()
+            simulator = Simulator(
+                csv_file=CSV_FILE_PATH / CSV_FILE,
+                alloc_policy=alloc_policy,
+                preempt_policy=preempt_policy,
+                sort_node_policy=sorting_policy,
+                num_nodes=NUM_NODES,
+                random_seed=RANDOM_SEED,
+                max_time=MAX_TIME,
+                num_spare_node=NUM_SPARE_NODE,
+                pattern=PATTERN,
+                hetero=HETERO,
+                num_gpus=NUM_GPUS,
+                num_cpus=NUM_CPUS,
+                describe_file=describe_file,
+                log_file=log_file,
+                export_job_stats=EXPORT_JOB_STATS,
+                export_cluster_util=EXPORT_CLUSTER_UTIL,
+                arrival_rate=ARRIVAL_RATE,
+                num_jobs_limit=NUM_JOBS,
+                gpu_type_matching=GPU_TYPE_MATCHING,
+                verbose=VERBOSE,
+                dataset=dataset,
+                repetition=rep)
+            results = simulator.simulator_go(repeat=REPEAT)
+            print('done,', str(alloc_policy),', ', str(sorting_policy))
 
 
 
-        # post processing
-#         num_jobs, avg_jct, makespan, wait_time = 0, 0, 0, 0
-#         for item in results:  # [num_jobs, avg_jct, makespan, [#alloc, alloc_time, #preempt, preempt_time]]
-#             num_jobs += item[0]
-#             avg_jct += item[1]
-#             wait_time += item[2]
-#             makespan += item[3]
-#         # key = (alloc_policy, preempt_policy)
-#         results_dict[key] = results
-#         num_jobs_dict[key] = num_jobs
-#         avg_jct_dict[key] = avg_jct / REPEAT
-#         makespan_dict[key] = makespan / REPEAT
-#         wait_time_dict[key] = wait_time / REPEAT
-#         runtime_dict[key] = time.time() - start_time
+    for job_dict in dataset:
+        job_dict['submit_time'] += 1
+        job_dict['bw'] = 0
+        job_dict["exec_time"] = -1
+        job_dict["bw"] = 0 #float(job_dict["write_count"])
+        job_dict["final_node_allocation"] = []
+        job_dict["final_gpu_allocation"] = []
+        job_dict["deadline"] = job_dict['submit_time'] + job_dict['duration'] * (1 + 0.1 * random.random()) # 10% deadline slack
 
-#         # print_fn("##### %s runtime: %.4f sec #####\n" % (print_key, runtime_dict[key]))
+    dataset = pd.DataFrame(dataset)
 
-#         print_str = "%s,%.2f,%.2f,%.0f,%d,%.2f" % (print_key, avg_jct_dict[key], wait_time_dict[key], makespan_dict[key], num_jobs_dict[key], runtime_dict[key])
-#         print(print_str)
-#         print_fn(print_str, level=2)
+    # Define the combinations of utility and scheduling_algorithm
+    # utilities = [Utility.UTIL, Utility.LGF]
+    # scheduling_algorithms = [SchedulingAlgorithm.FIFO, SchedulingAlgorithm.SDF]
 
-# if SORT_BY_JCT:
-#     print("\n# Sort by JCT")
-#     print_fn("\n# Sort by JCT\nalloc,preempt,avg_jct,wait_time,makespan,jobs_done,runtime", level=2)
-#     items = sorted(avg_jct_dict.items(), key=lambda d: d[1])
-# else:
-#     print("\n# Summary")
-#     print_fn("\n# Summary\nalloc,preempt,avg_jct,wait_time,makespan,jobs_done,runtime", level=2)
-#     items = avg_jct_dict.items()
-# for item in items:
-#     key = item[0]
-#     print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
-#     print_str = "%s,%.2f,%.2f,%.0f,%d,%.2f" % (print_key, avg_jct_dict[key], wait_time_dict[key], makespan_dict[key], num_jobs_dict[key], runtime_dict[key])
-#     print(print_str)
-#     print_fn(print_str, level=2)
+    utilities = [Utility.UTIL]
+    scheduling_algorithms = [SchedulingAlgorithm.FIFO]
 
-# print("\nlog_file: %s" % log_file)
-# subprocess.run(["python", "/home/andrea/Documents/projects/clusterdata/plotter.py"])
+    for utility in utilities:
+        for scheduling_algorithm in scheduling_algorithms:
+            simulator = Simulator_Plebiscito(filename=str(rep),
+                                            n_nodes=50,
+                                            node_bw=1000000000,
+                                            n_jobs=NUM_JOBS,
+                                            n_client=3,
+                                            enable_logging=False,
+                                            use_net_topology=False,
+                                            progress_flag=False,
+                                            dataset=dataset,
+                                            alpha=1,
+                                            utility=utility,
+                                            debug_level=DebugLevel.INFO,
+                                            scheduling_algorithm=scheduling_algorithm,
+                                            decrement_factor=0,
+                                            split=True,
+                                            app_type=ApplicationGraphType.LINEAR,)
+            simulator.run()
+
+
+
+
+
+#         # post processing
+# #         num_jobs, avg_jct, makespan, wait_time = 0, 0, 0, 0
+# #         for item in results:  # [num_jobs, avg_jct, makespan, [#alloc, alloc_time, #preempt, preempt_time]]
+# #             num_jobs += item[0]
+# #             avg_jct += item[1]
+# #             wait_time += item[2]
+# #             makespan += item[3]
+# #         # key = (alloc_policy, preempt_policy)
+# #         results_dict[key] = results
+# #         num_jobs_dict[key] = num_jobs
+# #         avg_jct_dict[key] = avg_jct / REPEAT
+# #         makespan_dict[key] = makespan / REPEAT
+# #         wait_time_dict[key] = wait_time / REPEAT
+# #         runtime_dict[key] = time.time() - start_time
+
+# #         # print_fn("##### %s runtime: %.4f sec #####\n" % (print_key, runtime_dict[key]))
+
+# #         print_str = "%s,%.2f,%.2f,%.0f,%d,%.2f" % (print_key, avg_jct_dict[key], wait_time_dict[key], makespan_dict[key], num_jobs_dict[key], runtime_dict[key])
+# #         print(print_str)
+# #         print_fn(print_str, level=2)
+
+# # if SORT_BY_JCT:
+# #     print("\n# Sort by JCT")
+# #     print_fn("\n# Sort by JCT\nalloc,preempt,avg_jct,wait_time,makespan,jobs_done,runtime", level=2)
+# #     items = sorted(avg_jct_dict.items(), key=lambda d: d[1])
+# # else:
+# #     print("\n# Summary")
+# #     print_fn("\n# Summary\nalloc,preempt,avg_jct,wait_time,makespan,jobs_done,runtime", level=2)
+# #     items = avg_jct_dict.items()
+# # for item in items:
+# #     key = item[0]
+# #     print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
+# #     print_str = "%s,%.2f,%.2f,%.0f,%d,%.2f" % (print_key, avg_jct_dict[key], wait_time_dict[key], makespan_dict[key], num_jobs_dict[key], runtime_dict[key])
+# #     print(print_str)
+# #     print_fn(print_str, level=2)
+
+# # print("\nlog_file: %s" % log_file)
+# # subprocess.run(["python", "/home/andrea/Documents/projects/clusterdata/plotter.py"])

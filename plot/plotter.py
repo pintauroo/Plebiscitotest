@@ -98,15 +98,17 @@ def plot_cpu_gpu(csv_files):
     v100_gpu_data = []
     p100_gpu_data = []
     t4_gpu_data = []
+
     
 
     # Iterate over CSV files
     for csv_file in csv_files:
         # read csv file into pandas dataframe
-        df = pd.read_csv(csv_file)
 
-        if 'FIFO' in csv_file:
-            
+        if 'split' in csv_file:
+            print('plebiscito')
+            df = pd.read_csv(basepath_plebi + csv_file + '.csv')
+
             cpu_columns = [col for col in df.columns if 'used_cpu' in col]
             gpu_columns = [col for col in df.columns if 'used_gpu' in col]
 
@@ -140,6 +142,8 @@ def plot_cpu_gpu(csv_files):
 
 
         else:
+            print('simulator')
+            df = pd.read_csv(basepath_simulator + csv_file + '.csv')
             cpu_columns = [col for col in df.columns if 'cpu' in col]
             gpu_columns = [col for col in df.columns if 'gpu' in col]
 
@@ -159,12 +163,12 @@ def plot_cpu_gpu(csv_files):
 
         for category, columns, perc in [('MISC', misc_cpu_cols, 96), ('V100', v100_cpu_cols, 96), ('P100', p100_cpu_cols, 64), ('T4', t4_cpu_cols, 96)]:
             cpu_data = df[columns].values.flatten() * 100 / perc
-            cpu_mean = cpu_data.mean()
-            cpu_std = cpu_data.std(ddof=1)
-            cpu_n = len(cpu_data)
-            cpu_se = cpu_std / cpu_n**0.5
-            cpu_ci[category] = t.interval(0.95, cpu_n - 1, cpu_mean, cpu_se)
-            df[columns] = cpu_data.reshape(df[columns].shape)
+            # cpu_mean = cpu_data.mean()
+            # cpu_std = cpu_data.std(ddof=1)
+            # cpu_n = len(cpu_data)
+            # cpu_se = cpu_std / cpu_n**0.5
+            # cpu_ci[category] = t.interval(0.95, cpu_n - 1, cpu_mean, cpu_se)
+            # df[columns] = cpu_data.reshape(df[columns].shape)
 
             # Append data to the corresponding category list
             if category == 'MISC':
@@ -178,12 +182,12 @@ def plot_cpu_gpu(csv_files):
 
         for category, columns, perc in [('MISC', misc_gpu_cols, 8), ('V100', v100_gpu_cols, 8), ('P100', p100_gpu_cols, 2), ('T4', t4_gpu_cols, 2)]:
             gpu_data = df[columns].values.flatten() * 100 / perc
-            gpu_mean = gpu_data.mean()
-            gpu_std = gpu_data.std(ddof=1)
-            gpu_n = len(gpu_data)
-            gpu_se = gpu_std / gpu_n**0.5
-            gpu_ci[category] = t.interval(0.95, gpu_n - 1, gpu_mean, gpu_se)
-            df[columns] = gpu_data.reshape(df[columns].shape)
+            # gpu_mean = gpu_data.mean()
+            # gpu_std = gpu_data.std(ddof=1)
+            # gpu_n = len(gpu_data)
+            # gpu_se = gpu_std / gpu_n**0.5
+            # gpu_ci[category] = t.interval(0.95, gpu_n - 1, gpu_mean, gpu_se)
+            # df[columns] = gpu_data.reshape(df[columns].shape)
 
             # Append data to the corresponding category list
             if category == 'MISC':
@@ -195,53 +199,64 @@ def plot_cpu_gpu(csv_files):
             elif category == 'T4':
                 t4_gpu_data.append(gpu_data)
 
-    # Plot the confidence intervals
+    # Your existing code setup
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))
-
-    # Add a shift to each box
     box_width = 0.2
     positions = [1, 2, 3, 4]
     positions_shift = [-0.4, -0.2, 0, 0.2]
     box_colors = ['red', 'green', 'blue', 'orange']
-
-    # Store legend patches
     legend_patches = []
 
-    # Modify the boxplot calls to include colors and legend patches
     for i, (cpu_data, gpu_data) in enumerate(zip([misc_cpu_data, v100_cpu_data, p100_cpu_data, t4_cpu_data],
                                                 [misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data])):
         for j, position in enumerate(positions):
-            color = box_colors[i % len(box_colors)]  # Use modulo to cycle through colors for each position
-            if j%4==0:
-                if i==0:
-                    patch = mpatches.Patch(color=color, label='ID')
-                elif i==1:
-                    patch = mpatches.Patch(color=color, label='SGF')
-                elif i==2:
-                    patch = mpatches.Patch(color=color, label='LGF')
-                elif i==3:
-                    patch = mpatches.Patch(color=color, label='UTIL') 
+            color = box_colors[i % len(box_colors)]
+            if j % 4 == 0:
+                # Define legend patches
+                if i == 0:
+                    patch = mpatches.Patch(color=color, label='MISC')
+                elif i == 1:
+                    patch = mpatches.Patch(color=color, label='V100')
+                elif i == 2:
+                    patch = mpatches.Patch(color=color, label='P100')
+                elif i == 3:
+                    patch = mpatches.Patch(color=color, label='T4') 
                 legend_patches.append(patch)
+            
+            # Plotting the boxplot
             axs[0].boxplot(cpu_data[j], positions=[position + positions_shift[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
             axs[1].boxplot(gpu_data[j], positions=[position + positions_shift[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
+
+        # Set x-tick labels for each position with a shift
+        # shifted_positions = [p + shift for p in positions for shift in positions_shift]
+        # repeated_labels = ['MISC', 'V100', 'P100', 'T4'] * len(positions_shift)
+        # axs[0].set_xticks(shifted_positions)
+        # axs[0].set_xticklabels(repeated_labels, rotation=90)
+        # axs[1].set_xticks(shifted_positions)
+        # axs[1].set_xticklabels(repeated_labels, rotation=90)
+
+        # Set x-tick labels for each position
+        axs[0].set_xticks(positions)
+        axs[0].set_xticklabels(csvs)
+        axs[1].set_xticks(positions)
+        axs[1].set_xticklabels(csvs)
 
     # Add legends
     axs[0].legend(handles=legend_patches, title='Legend', loc='upper right')
     axs[1].legend(handles=legend_patches, title='Legend', loc='upper right')
 
     axs[0].set_title('CPU')
-    axs[0].set_xticks(positions)
-    axs[0].set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-
     axs[1].set_title('GPU')
-    axs[1].set_xticks(positions)
-    axs[1].set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
 
-    plt.savefig("boxcpu_gpu.png")
+    plt.savefig("boxcpu_gpu_fifo.png")
 
-
+basepath_simulator = '/home/crownlabs/Plebiscitotest/res/'
+basepath_plebi = '/home/crownlabs/Plebiscitotest/'
+# csvs = ['1_UTIL_FIFO_0_nosplit','2_LGF_FIFO_0_nosplit','data_FIFO_LGF','data_FIFO_UTIL']
+csvs = ['1_0_UTIL_FIFO_0_split','1_1_UTIL_FIFO_0_split','1_1_UTIL_FIFO_0_split','1_3_UTIL_FIFO_0_split']
 # plot_cpu_gpu(['data_0_2.csv','data_0_2.csv','data_0_2.csv','data_0_2.csv'])
-plot_cpu_gpu(['1_LGF_FIFO_1_split.csv','data_0_0.csv','data_0_0.csv','data_0_0.csv'])
+plot_cpu_gpu(csvs)
+# plot_cpu_gpu(['data_SDF_ID.csv','data_SDF_SGF.csv','data_SDF_LGF.csv','data_SDF_UTIL.csv'])
 # plot_cpu_gpu(['data_0_0.csv', 'data_0_1.csv', 'data_0_2.csv', 'data_0_3.csv'])
 # plot_cpu_gpu(['data_8_0.csv', 'data_8_1.csv', 'data_8_2.csv', 'data_8_3.csv'])
 

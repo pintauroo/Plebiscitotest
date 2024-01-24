@@ -22,7 +22,7 @@ keys: job_id,duration,resource=[num_gpu, num_cpu]
 
 
 class Simulator:
-    def __init__(self, csv_file, alloc_policy=0, preempt_policy=0,
+    def __init__(self, csv_file, repetition, alloc_policy=0, preempt_policy=0,
                  sort_node_policy=0, oracle=False, random_seed=42,
                  max_time=int(1e10), num_gpus=None, num_cpus=None, num_nodes=4,
                  pattern=1, delta=1, num_spare_node=1,
@@ -62,6 +62,7 @@ class Simulator:
         self.log_file = log_file  # just pass the path
         self.verbose = verbose
         random.seed(random_seed)
+        self.rep=repetition
 
     @staticmethod
     def add_job(csv_file, describe_dict, limit=None):
@@ -108,13 +109,13 @@ class Simulator:
         # for _ in range(10):  # low-ended machines first
         #     node_list.append(Node(node_id, 0, 96, gpu_type='CPU'))
         #     node_id += 1
-        for _ in range(10):  # low-ended machines first
+        for _ in range(10):#(10):  # low-ended machines first
             node_list.append(Node(node_id, 8, 96, gpu_type='MISC'))
             node_id += 1
-        for _ in range(18):  # low-ended machines first
+        for _ in range(18):#(18):  # low-ended machines first
             node_list.append(Node(node_id, 2, 96, gpu_type='T4'))
             node_id += 1
-        for _ in range(19):  # low-ended machines first
+        for _ in range(19):#(19):  # low-ended machines first
             node_list.append(Node(node_id, 2, 64, gpu_type='P100'))
             node_id += 1
         for _ in range(3):
@@ -200,6 +201,16 @@ class Simulator:
             cluster_util_file = self.log_file.parent / cluster_util_name
             np.save(cluster_util_file, cluster_util)
         return num_jobs_done, jct_summary, wait_time_summary
+    
+    def policy_name_converter(self, alloc_policy, sorting_policy):
+        alloc_policy_names = {0: 'SDF', 8: 'FIFO'}
+        sorting_policy_names = {0: 'ID', 1: 'SGF', 2: 'LGF', 3: 'UTIL'}
+
+        alloc_name = alloc_policy_names.get(alloc_policy, 'Unknown Alloc Policy')
+        sorting_name = sorting_policy_names.get(sorting_policy, 'Unknown Sorting Policy')
+
+        return alloc_name, sorting_name
+
 
     def simulator_go(self, repeat=1, num_jobs=None):
         """
@@ -240,17 +251,16 @@ class Simulator:
             # Save the dictionary to a CSV file
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            with open('res/data_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
+            a, s = self.policy_name_converter(self.alloc_policy, self.sort_node_policy)
+            with open(str(self.rep)+'data_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(dic.keys())
                 writer.writerows(zip(*dic.values()))
 
             jobbe = self.scheduler.jobs
 
-            # ...
 
-            # Write jobbe list to CSV file
-            with open('res/jobs_'+str(self.alloc_policy)+'_'+str(self.sort_node_policy)+'.csv', mode='w') as file:
+            with open(str(self.rep)+'jobs_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(['job_id', 'submit_time', 'duration', 'jct', 'num_inst', 'gpu_type', 'num_cpu', 'num_gpu', 'size', 'wasted', 'resource', 'node', 'allocated_at', 'waiting_time', 'progress'])
                 for job in jobbe:
@@ -275,18 +285,18 @@ class Simulator:
 
             if stop == -2:
                 # print('empty queue' + str(self.cur_time))
-                self.cur_time = self.cur_time + delta
-                self.cluster.cur_time = self.cur_time
+                # self.cur_time = self.cur_time + delta
+                # self.cluster.cur_time = self.cur_time
                 self.cluster.retrieve_job_from_full_list()
 
-            else:
+            # else:
                 # Jobs tic and global cur_time += delta
-                tic_return_value = self.cluster.tic_job(delta)
-                if tic_return_value >= 0:
-                    self.cur_time = tic_return_value
-                else:
-                    self.cur_time = self.cur_time + delta
-                    self.exit_flag = 1
+            tic_return_value = self.cluster.tic_job(delta)
+            if tic_return_value >= 0:
+                self.cur_time = tic_return_value
+            else:
+                self.cur_time = self.cur_time + delta
+                self.exit_flag = 1
         else:
             print_fn("TIMEOUT {} with jobs {}".format(self.cur_time, self.cluster.job_list))
             self.exit_flag = 1

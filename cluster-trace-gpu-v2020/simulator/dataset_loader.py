@@ -1,5 +1,6 @@
 import random
 import csv
+import time
 import numpy as np
 import random
 import os
@@ -24,6 +25,59 @@ def set_job_list_arrival_time(job_list, arrival_rate=None, interval=60, shuffle_
         arrival_counter += 1
     
     return job_list
+
+
+def poisson_arrivals(job_list):
+
+    total_time = 5000
+    total_jobs = 1000
+    interval_length = 10
+    num_intervals = total_time // interval_length
+
+    # Mean arrival rate per interval
+    lambda_per_interval = (total_jobs / total_time) * interval_length
+
+    # Initialize job counter and list to store arrival times
+    job_counter = 0
+    arrival_times = []
+
+    # Assign jobs to each interval
+    for interval in range(num_intervals):
+        # Expected number of arrivals in this interval
+        expected_arrivals = np.random.poisson(lambda_per_interval)
+
+        # Assign jobs to this interval
+        for _ in range(expected_arrivals):
+            if job_counter < total_jobs:
+                # Assign an arrival time within the interval
+                arrival_time = interval * interval_length + np.random.uniform(0, interval_length)
+                arrival_times.append(arrival_time)
+                job_counter += 1
+            else:
+                print('errorrrrrr')
+                break
+
+        if job_counter >= total_jobs:
+            print('errorrrrrr')
+
+            break
+
+    # If there are still unassigned jobs, distribute them in the remaining time
+    while job_counter < total_jobs:
+        arrival_time = np.random.uniform(0, total_time)
+        arrival_times.append(arrival_time)
+        job_counter += 1
+
+    # Sort the arrival times
+    arrival_times.sort()
+
+    # Assign arrival times to jobs
+    for i, job in enumerate(job_list):
+        job['submit_time'] = int(arrival_times[i])
+
+    
+    return job_list
+
 
 def _add_job(job_list, job_dict, describe_dict=None):
     # Add job (job_dict) into job_list
@@ -58,7 +112,7 @@ def _add_job(job_list, job_dict, describe_dict=None):
 
 
     # Add entries to be used in scheduling
-    job_dict['duration'] = int(float(job_dict['duration']))
+    job_dict['duration'] = int(float(job_dict['duration'])) if int(float(job_dict['duration']))< 2000 else 2000
     # job_dict['duration'] = 1
     # if job_dict['duration'] <= 0:
     #     job_dict['duration'] = 1  # fix duration == 0 problem.
@@ -129,17 +183,17 @@ def add_job(csv_file, describe_dict, limit=None):
 def init_go_(num_jobs, arrivals):
     random.seed(0)
     current_directory = os.getcwd()
-    # csv_file=str(current_directory)+'/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
-    csv_file=str(current_directory)+'/traces/pai/pai_job_no_estimate_100K.csv'
+    csv_file='/home/crownlabs/Plebiscitotest/cluster-trace-gpu-v2020/simulator/traces/pai/pai_job_no_estimate_100K.csv'
+    # csv_file=str(current_directory)+'/traces/pai/pai_job_no_estimate_100K.csv'
     job_list = add_job(csv_file, None, limit=num_jobs)
     print('job_list size:')
     print(len(job_list))
     if (num_jobs is not None) and num_jobs <= len(job_list):
-        #random.seed(time.time())
-        #random.shuffle(job_list)
-
+        random.seed(time.time())
+        random.shuffle(job_list)
         job_list = job_list[:num_jobs]
-    #job_list = set_job_list_arrival_time(job_list, arrivals)
+    # job_list = set_job_list_arrival_time(job_list, arrivals)
+    job_list = poisson_arrivals(job_list)
     # print(job_list)
     # sys.exit()
     return job_list

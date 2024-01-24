@@ -23,7 +23,7 @@ class Scheduler:
         # Trying skipping allocation as early as possible
         if len(job_list) == 0 and not cluster.jobs_done:
             return -2
-        elif len(job_list) <= 0: # and cluster.jobs_done:
+        if len(job_list) <= 0: # and cluster.jobs_done:
             return -1
         
         

@@ -18,7 +18,7 @@ def plot_cpu_gpu(csv_file):
     cpu_percentages = [96, 96, 64, 96]
     gpu_percentages = [8, 8, 2, 2]
 
-    if 'FIFO' in csv_file:
+    if '1_UTIL_FIFO_0_nosplit' in csv_file:
         
         cpu_columns = [col for col in df.columns if 'used_cpu' in col]
         gpu_columns = [col for col in df.columns if 'used_gpu' in col]
@@ -129,6 +129,6 @@ def plot_cpu_gpu(csv_file):
     plt.savefig("boxcpu_gpu.png")
 
 # Example usage
-csv_file = '/home/andrea/Plebiscitotest/cluster-trace-gpu-v2020/simulator/res/data_8_2.csv'
+csv_file = '/home/crownlabs/Plebiscitotest/cluster-trace-gpu-v2020/simulator/1_UTIL_FIFO_0_nosplit.csv'
 # csv_file = '1-1_LGF_FIFO_0.25_split.csv'
 plot_cpu_gpu(csv_file)

@@ -6,7 +6,8 @@ import numpy as np
 
 def plot_cpu_gpu(csv_file):
     # Read the CSV file into a pandas DataFrame
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(basepath + csv_file)
+
 
     # Define categories and percentages for CPU and GPU
     cpu_categories = ['MISC', 'V100', 'P100', 'T4']
@@ -61,8 +62,10 @@ def plot_cpu_gpu(csv_file):
     axs[1].set_xticks(positions)
     axs[1].set_xticklabels(gpu_categories)
 
-    plt.savefig("boxcpu_gpu.png")
+    plt.savefig("boxcpu_gpu_single.png")
 
 # Example usage
-csv_file = 'data_0_3.csv'
+basepath = '/home/crownlabs/Plebiscitotest/res/'
+    
+csv_file = 'data_FIFO_ID.csv'
 plot_cpu_gpu(csv_file)

@@ -19,7 +19,8 @@ if len(sys.argv) != 2:
     sys.exit(1)
     
 # sys.path.append(os.getcwd()+"/Plebiscito")
-sys.path.append("/home/crownlabs/Plebiscitotest/cluster-trace-gpu-v2020/simulator/Plebiscito")
+
+sys.path.append(os.getcwd()+"/cluster-trace-gpu-v2020/simulator/Plebiscito")
 from src.simulator import Simulator_Plebiscito
 from src.config import Utility, DebugLevel, SchedulingAlgorithm, ApplicationGraphType
 
@@ -179,34 +180,34 @@ for i in range(1):
         job_dict["final_gpu_allocation"] = []
         job_dict["deadline"] = job_dict['submit_time'] + job_dict['duration'] * (1 + 0.1 * random.random()) # 10% deadline slack
 
-    dataset = pd.DataFrame(dataset)
+    # dataset = pd.DataFrame(dataset)
 
-    # Define the combinations of utility and scheduling_algorithm
-    # utilities = [Utility.UTIL, Utility.LGF]
-    # scheduling_algorithms = [SchedulingAlgorithm.FIFO, SchedulingAlgorithm.SDF]
+    # # Define the combinations of utility and scheduling_algorithm
+    # # utilities = [Utility.UTIL, Utility.LGF]
+    # # scheduling_algorithms = [SchedulingAlgorithm.FIFO, SchedulingAlgorithm.SDF]
 
-    utilities = [Utility.UTIL]
-    scheduling_algorithms = [SchedulingAlgorithm.FIFO]
+    # utilities = [Utility.UTIL]
+    # scheduling_algorithms = [SchedulingAlgorithm.FIFO]
 
-    for utility in utilities:
-        for scheduling_algorithm in scheduling_algorithms:
-            simulator = Simulator_Plebiscito(filename=str(rep),
-                                            n_nodes=50,
-                                            node_bw=1000000000,
-                                            n_jobs=NUM_JOBS,
-                                            n_client=3,
-                                            enable_logging=False,
-                                            use_net_topology=False,
-                                            progress_flag=False,
-                                            dataset=dataset,
-                                            alpha=1,
-                                            utility=utility,
-                                            debug_level=DebugLevel.INFO,
-                                            scheduling_algorithm=scheduling_algorithm,
-                                            decrement_factor=0,
-                                            split=True,
-                                            app_type=ApplicationGraphType.LINEAR,)
-            simulator.run()
+    # for utility in utilities:
+    #     for scheduling_algorithm in scheduling_algorithms:
+    #         simulator = Simulator_Plebiscito(filename=str(rep),
+    #                                         n_nodes=50,
+    #                                         node_bw=1000000000,
+    #                                         n_jobs=NUM_JOBS,
+    #                                         n_client=3,
+    #                                         enable_logging=False,
+    #                                         use_net_topology=False,
+    #                                         progress_flag=False,
+    #                                         dataset=dataset,
+    #                                         alpha=1,
+    #                                         utility=utility,
+    #                                         debug_level=DebugLevel.INFO,
+    #                                         scheduling_algorithm=scheduling_algorithm,
+    #                                         decrement_factor=0,
+    #                                         split=True,
+    #                                         app_type=ApplicationGraphType.LINEAR,)
+    #         simulator.run()
 
 
 

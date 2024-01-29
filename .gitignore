@@ -1,4 +1,5 @@
-/*.csv
+*.csv
+*.png
 /cluster-trace-gpu-v2020/simulator/*.csv
 /cluster-trace-gpu-v2020/simulator/plot
 /cluster-trace-gpu-v2020/simulator/logs

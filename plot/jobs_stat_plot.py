@@ -238,8 +238,8 @@ def plot_job_execution_delay_submit_clt(simulation_name):
         dir_name (str): The name of the directory where the plot will be saved.
     """
 
-    folder_path = '/home/crownlabs/Plebiscitotest/res'  # Replace with the actual path to your folder
-    folder_path = '/home/crownlabs/Plebiscitotest'  # Replace with the actual path to your folder
+    # folder_path = '/home/crownlabs/Plebiscitotest/res'  # Replace with the actual path to your folder
+    folder_path = '/home/andrea/projects/Plebiscitotest/res/try2'  # Replace with the actual path to your folder
 
     # Get a list of all files in the folder
     all_files = os.listdir(folder_path)
@@ -250,16 +250,25 @@ def plot_job_execution_delay_submit_clt(simulation_name):
     # Now, 'csv_files' contains a list of all CSV files in the folder
     print("CSV Files in the folder:")
     file_list = []
-    for i in range(20):
-        if '1_'+str(i)+'_'+simulation_name+'.csv' in csv_files:
-            file_list.append('1_'+str(i)+'_'+simulation_name)
+
+    # for i in range(20):
+    #     # if '1_'+str(i)+'_'+simulation_name+'.csv' in csv_files:
+    #     if 'data' in csv_files:
+    #         file_list.append('1_'+str(i)+'_'+simulation_name)
+    for i in csv_files:
+        # if 'jobs' in i and 'report' not in i:
+        if 'report' in i:
+            file_list.append(i)
+
+
+
 
     print(file_list)
 
 
     # Create a figure for the combined CDF plot
     gpu_types = ['T4','MISC','V100','P100']
-    gpu_types = ['MISC']
+    # gpu_types = ['MISC']
     # gpu_type = 'MISC'
     # gpu_type = 'V100'
     # gpu_type = 'P100'
@@ -270,7 +279,8 @@ def plot_job_execution_delay_submit_clt(simulation_name):
         for filename in file_list:
             if 'report' in filename:
                 try:
-                    df = pd.read_csv(basepath + filename + '.csv')
+                    print(folder_path + filename)
+                    df = pd.read_csv(folder_path + '/'+filename)
                 except:
                     print('error')
                     continue
@@ -281,7 +291,7 @@ def plot_job_execution_delay_submit_clt(simulation_name):
             else:
                 try:
 
-                    df = pd.read_csv(folder_path +'/'+ filename + '.csv')
+                    df = pd.read_csv(folder_path +'/'+ filename)
                 except:
                     print('error')
                     continue
@@ -410,7 +420,7 @@ if __name__ == "__main__":
     # plot_job_execution_delay("jobs_report", dir_name)
     # plot_job_deadline("jobs_report", dir_name)
 
-    basepath = '/home/crownlabs/Plebiscitotest/'
+    basepath = '/home/andrea/projects/Plebiscitotest/'
     # plot_job_execution_delay_cdf(['1_UTIL_FIFO_0_nosplit_jobs_report', '2_LGF_FIFO_0_nosplit_jobs_report'], dir_name)
 
 

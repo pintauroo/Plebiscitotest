@@ -5,10 +5,10 @@ import random
 import csv
 import copy
 import numpy as np
-from utils import print_fn, _add_job, _repr_job_done, _add_describe, GPU_TYPE_INT_DICT
-from cluster import Cluster
-from node import Node
-from scheduler import Scheduler
+from Alibaba.utils import print_fn, _add_job, _repr_job_done, _add_describe, GPU_TYPE_INT_DICT
+from Alibaba.cluster import Cluster
+from Alibaba.node import Node
+from Alibaba.scheduler import Scheduler
 import csv
 
 import os

@@ -189,11 +189,12 @@ if __name__ == '__main__':
     
     simulator_kubernetes = KubernetesScheduler(nodes, dataset, "kubernetes", ApplicationGraphType.LINEAR, True, adj, failures)
     
-    simulator_kubernetes.run()
     simulator1.run()
     simulator2.run()
     simulator3.run()
     simulator4.run()
+    
+    simulator_kubernetes.run()
     
     # ------ END PLEBISCITO SIMULATION -------
     

@@ -8,5 +8,5 @@ END_INDEX=30
 for i in $(seq $START_INDEX $END_INDEX)
 do
     # Call the Python script with the current index
-    python3 cluster-trace-gpu-v2020/simulator/run_simulator.py $i
+    python3 /home/crownlabs/Plebiscitotest/src/main.py $i
 done

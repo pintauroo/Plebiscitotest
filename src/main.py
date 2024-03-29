@@ -35,7 +35,7 @@ def generate_node_failures(n_nodes, n_failures, n_jobs):
 
 
 if __name__ == '__main__':
-    NUM_JOBS = 1000 #args.num_jobs
+    NUM_JOBS = 30 #args.num_jobs
     n_nodes = 50
     n_failure = 0
     
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     describe_file = CSV_FILE_PATH / DESCRIBE_FILE if DESCRIBE_FILE is not None else None
     
     # ------ END FROM ALIBABA -------
-    dataset = init_go_(NUM_JOBS, ARRIVAL_RATE)
+    dataset = init_go_(NUM_JOBS, ARRIVAL_RATE, rep)
     
     # dataset = generate_dataset(entries_num=NUM_JOBS)
     failures = generate_node_failures(n_nodes, n_failure, NUM_JOBS)
@@ -137,17 +137,21 @@ if __name__ == '__main__':
     for job_dict in dataset:
         job_dict['submit_time'] += 1
         job_dict['bw'] = 0
-        job_dict["exec_time"] = -1
         #job_dict["bw"] = 0 #float(job_dict["write_count"])
         job_dict["final_node_allocation"] = []
         job_dict["final_gpu_allocation"] = []
         job_dict["deadline"] = job_dict['submit_time'] + job_dict['duration'] * (1 + 0.1 * random.random()) # 10% deadline slack
+        job_dict["exec_time"] = -1
+        job_dict["complete_time"] = 0
+        job_dict["current_duration"] = 0 # this value keeps track of the job's current duration with respect to the speedup. Not useful to plot, it is used for internal purposes
+        job_dict["speedup"] = 1
         
     dataset = pd.DataFrame(dataset)
 
-    utils = ['LGF', 'SGF', 'UTIL']  
-    sched = ['FIFO', 'SDF']
-    split = [True, False]
+    utils = ['LGF']  
+    sched = ['FIFO']
+    split = [False]
+    rebid = [False]
 
     for u in utils:
         utility = getattr(Utility, u, None)
@@ -162,18 +166,21 @@ if __name__ == '__main__':
                 continue
 
             for sp in split:
-                simulator = Simulator_Plebiscito(filename=rep,
-                                    n_nodes=n_nodes,
-                                    n_jobs=NUM_JOBS,
-                                    dataset=dataset,
-                                    failures=failures,
-                                    logical_topology="ring_graph",
-                                    scheduling_algorithm=scheduling_algorithm,
-                                    utility=utility,
-                                    #debug_level=DebugLevel.TRACE,
-                                    #enable_logging=True,
-                                    split=sp)
-                simulator.run()
+                for rb in rebid:
+                    simulator = Simulator_Plebiscito(filename=rep,
+                                        n_nodes=n_nodes,
+                                        n_jobs=NUM_JOBS,
+                                        dataset=dataset,
+                                        failures=failures,
+                                        logical_topology="ring_graph",
+                                        scheduling_algorithm=scheduling_algorithm,
+                                        utility=utility,
+                                        #debug_level=DebugLevel.TRACE,
+                                        #enable_logging=True,
+                                        split=sp,
+                                        enable_post_allocation=rb,
+                                        decrement_factor=0.2)
+                    simulator.run()
     
     # nodes = simulator1.get_nodes()
     # adj = simulator1.get_adjacency_matrix()

@@ -35,7 +35,7 @@ def generate_node_failures(n_nodes, n_failures, n_jobs):
 
 
 if __name__ == '__main__':
-    NUM_JOBS = 30 #args.num_jobs
+    NUM_JOBS = 1000 #args.num_jobs
     n_nodes = 50
     n_failure = 0
     
@@ -149,9 +149,10 @@ if __name__ == '__main__':
     dataset = pd.DataFrame(dataset)
 
     utils = ['LGF']  
-    sched = ['FIFO']
-    split = [False]
+    sched = ['FIFO', 'SDF']
+    split = [True, False]
     rebid = [False]
+    dec_factor = [0, .25, .5, .75, 1]
 
     for u in utils:
         utility = getattr(Utility, u, None)
@@ -167,20 +168,21 @@ if __name__ == '__main__':
 
             for sp in split:
                 for rb in rebid:
-                    simulator = Simulator_Plebiscito(filename=rep,
-                                        n_nodes=n_nodes,
-                                        n_jobs=NUM_JOBS,
-                                        dataset=dataset,
-                                        failures=failures,
-                                        logical_topology="ring_graph",
-                                        scheduling_algorithm=scheduling_algorithm,
-                                        utility=utility,
-                                        #debug_level=DebugLevel.TRACE,
-                                        #enable_logging=True,
-                                        split=sp,
-                                        enable_post_allocation=rb,
-                                        decrement_factor=0.2)
-                    simulator.run()
+                    for dc in dec_factor:
+                        simulator = Simulator_Plebiscito(filename=rep,
+                                            n_nodes=n_nodes,
+                                            n_jobs=NUM_JOBS,
+                                            dataset=dataset,
+                                            failures=failures,
+                                            logical_topology="ring_graph",
+                                            scheduling_algorithm=scheduling_algorithm,
+                                            utility=utility,
+                                            #debug_level=DebugLevel.TRACE,
+                                            #enable_logging=True,
+                                            split=sp,
+                                            enable_post_allocation=rb,
+                                            decrement_factor=dc)
+                        simulator.run()
     
     # nodes = simulator1.get_nodes()
     # adj = simulator1.get_adjacency_matrix()

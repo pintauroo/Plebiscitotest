@@ -148,7 +148,7 @@ if __name__ == '__main__':
         
     dataset = pd.DataFrame(dataset)
 
-    utils = ['LGF']  
+    utils = ['SPEEDUP', 'LGF']  
     sched = ['FIFO', 'SDF']
     split = [False]
     rebid = [False]

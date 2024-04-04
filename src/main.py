@@ -150,9 +150,9 @@ if __name__ == '__main__':
 
     utils = ['LGF']  
     sched = ['FIFO', 'SDF']
-    split = [True, False]
+    split = [False]
     rebid = [False]
-    dec_factor = [0, .25, .5, .75, 1]
+    dec_factor = [0, .2, .4, .6, .8, 1]
 
     for u in utils:
         utility = getattr(Utility, u, None)

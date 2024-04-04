@@ -183,7 +183,7 @@ def add_job(csv_file, describe_dict, limit=None):
 
 def init_go_(num_jobs, arrivals, seed):
     random.seed(seed)
-    np.random.seed(seed)
+    np.random.seed(int(seed))
     current_directory = os.getcwd()
     csv_file=current_directory+'/traces/pai_job_no_estimate_100K.csv'
     # csv_file=str(current_directory)+'/traces/pai/pai_job_no_estimate_100K.csv'

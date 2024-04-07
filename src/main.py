@@ -148,8 +148,8 @@ if __name__ == '__main__':
         
     dataset = pd.DataFrame(dataset)
 
-    utils = ['LGF']  
-    sched = ['SDF', 'FIFO']
+    utils = ['SPEEDUP', 'LGF']  
+    sched = ['FIFO', 'SDF']
     split = [False]
     rebid = [False]
     # dec_factor = [0, .25, .5, .75, 1]

@@ -36,7 +36,7 @@ def generate_node_failures(n_nodes, n_failures, n_jobs):
 
 if __name__ == '__main__':
     NUM_JOBS = 1000 #args.num_jobs
-    n_nodes = 50
+    n_nodes = 30
     n_failure = 0
     
     # # ------ START FROM ALIBABA -------
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         
     dataset = pd.DataFrame(dataset)
 
-    utils = ['SPEEDUP', 'LGF']  
+    utils = ['SPEEDUP', 'SPEEDUPV2', "LGF", "UTILS"]  
     sched = ['FIFO', 'SDF']
     split = [False]
     rebid = [False]
@@ -160,6 +160,10 @@ if __name__ == '__main__':
         if utility is None:
             print(f"Warning: '{u}' is not a valid Utility member.")
             continue
+        
+        dec_factor = [0]
+        if u == "LGF":
+            dec_factor = [0, 1]
 
         for s in sched:
             scheduling_algorithm = getattr(SchedulingAlgorithm, s, None)

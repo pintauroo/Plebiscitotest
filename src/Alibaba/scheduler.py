@@ -1,5 +1,6 @@
 import Alibaba.utils
 from Alibaba.utils import print_fn, ALLOC_POLICY_DICT, PREEMPT_POLICY_DICT, _repr_job_concise
+from Plebiscito.src.config import GPUSupport
 
 
 class Scheduler:
@@ -115,6 +116,11 @@ class Scheduler:
                         job_a['node'] = node.id
                         job_a['allocated_at'] = self.cluster.cur_time
                         job_a['waiting_time'] = job_a['submit_time'] - job_a['allocated_at']
+                        host_gpu_type = GPUSupport.get_gpu_type(node.gpu_type)
+                        job_gpu_type = GPUSupport.get_gpu_type(job_a['gpu_type'])
+                        job_a['speedup'] = GPUSupport.compute_speedup(host_gpu_type, job_gpu_type)
+                        print('SPEEDUP:', job_a['speedup'], host_gpu_type, job_gpu_type, job_a['duration'], job_a['speedup'], job_a['duration'] / job_a['speedup'])
+                        job_a['duration'] /= job_a['speedup']
                         self.jobs.append(job_a)
                         print_fn("%sON  : N[%d] %s" % (cluster.log_prefix, job_a['node'], job_a))
                         self.display_node_status(cur_node_id=job_a['node'])

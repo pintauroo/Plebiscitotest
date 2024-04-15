@@ -185,7 +185,7 @@ def init_go_(num_jobs, arrivals, seed):
     random.seed(int(seed))
     np.random.seed(int(seed))
     current_directory = os.getcwd()
-    csv_file=current_directory+'/src/traces/pai_job_no_estimate_100K.csv'
+    csv_file=current_directory+'/traces/pai_job_no_estimate_100K.csv'
     # csv_file=str(current_directory)+'/traces/pai/pai_job_no_estimate_100K.csv'
     job_list = add_job(csv_file, None, limit=num_jobs)
     print('job_list size:')

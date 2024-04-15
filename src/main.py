@@ -151,7 +151,7 @@ if __name__ == '__main__':
     utils = ['SPEEDUP', 'SPEEDUPV2', "LGF", "UTIL"]  
     sched = ['FIFO', 'SDF']
     split = [False]
-    rebid = [False, True]
+    rebid = [True, False]
     # dec_factor = [0, .25, .5, .75, 1]
     dec_factor = [0]
 

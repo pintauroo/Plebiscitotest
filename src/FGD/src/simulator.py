@@ -48,6 +48,7 @@ class FGD:
     def __init__(self, nodes, dataset, filename, application_graph_type, split, adjacency_matrix, failures = {}):
         self.dataset = dataset.sort_values(by=["submit_time"])
         self.compute_nodes = []
+        self.n_nodes = nodes
         self.filename = filename
         self.application_type = application_graph_type
         self.split = split
@@ -66,9 +67,11 @@ class FGD:
         d = {}
         
         for i, n in enumerate(self.compute_nodes):
-            d["node_" + str(i) + "_cpu"] = n.used_cpu
-            d["node_" + str(i) + "_gpu"] = n.used_gpu
-            d["node_" + str(i) + "_bw"] = n.used_bw
+            d["node_" + str(i) + "_used_cpu"] = n.used_cpu
+            d["node_" + str(i) + "_initial_gpu"] = n.total_gpu
+            d["node_" + str(i) + "_used_gpu"] = n.used_gpu
+            d["node_" + str(i) + "_initial_cpu"] = n.total_cpu    
+            #d["node_" + str(i) + "_bw"] = n.used_bw
             
         # append dictionary to exixting csv file
         df = pd.DataFrame(d, index=[0])
@@ -136,7 +139,7 @@ class FGD:
             for id, j in enumerate(running_jobs):
                 if j["duration"] + j["exec_time"] < time_instant:
                     for i in range(len(self.compute_nodes)):
-                        self.compute_nodes[i].deallocate(j["job_id"], j["NN_cpu"], j["NN_gpu"])
+                        self.compute_nodes[i].deallocate(j["job_id"], j["NN_cpu"], j["NN_gpu"], 0)
                     print(f"Deallocated job {j['job_id']}")
                     running_jobs[id]["complete_time"] = time_instant
                     self.processed_jobs.append(copy.deepcopy(running_jobs[id]))
@@ -188,7 +191,7 @@ class FGD:
             
             for id, n in enumerate(self.compute_nodes):
                 if id in connected_nodes:
-                    frag = n.compute_fragmentation(job["NN_cpu"][i], job["NN_gpu"][i], 1/len(job["NN_cpu"], job["job_id"]), i)
+                    frag = n.compute_fragmentation(job["NN_cpu"], job["NN_gpu"], 1/len(job["NN_cpu"]), job["job_id"], i)
                     if frag != None:
                         node_scores.append(frag)
                     else:
@@ -206,6 +209,9 @@ class FGD:
             if best_location != -1:
                 self.compute_nodes[best_location].allocate(job["job_id"], job["NN_cpu"][i], job["NN_gpu"][i], i)
                 best_allocation[i] = best_location
+                for i in range(self.n_nodes):
+                    if i != best_location:
+                        self.compute_nodes[i].invalidate_job(job["job_id"])
             else:
                 for j in range(i):
                     self.compute_nodes[best_allocation[j]].deallocate(job["job_id"], job["NN_cpu"][j], job["NN_gpu"][j], j)

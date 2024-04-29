@@ -14,15 +14,23 @@ class Node:
         
         for _ in range(self.total_gpu):
             self.gpus.append(1)
+
+    def invalidate_job(self, job_id):
+        del self.allocated_on[job_id]
             
     def deallocate(self, job_id, cpu, gpu, id):
+        if job_id not in self.allocated_on:
+            return
+        
         self.gpus[self.allocated_on[job_id][id]] += gpu
-    
+        self.used_gpu -= gpu
         self.used_cpu -= cpu
+
+        del self.allocated_on[job_id]
             
     def allocate(self, job_id, cpu, gpu, id):
         self.gpus[self.allocated_on[job_id][id]] -= gpu
-    
+        self.used_gpu += gpu
         self.used_cpu += cpu
     
     def compute_quadrant(self, cpu, gpu, u):

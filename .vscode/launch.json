@@ -5,12 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: Run main.py with Args",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "/home/andrea/projects/Plebiscitotest/src/main.py",
+            "args": ["3"],
             "console": "integratedTerminal",
-            "python": "/home/andrea/Plebiscitotest/.venv/bin/python"
+            // "python": "/home/andrea/Plebiscitotest/.venv/bin/python"
         }
     ]
 }

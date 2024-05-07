@@ -26,8 +26,7 @@ class Scheduler:
             return -2
         if len(job_list) <= 0: # and cluster.jobs_done:
             return -1
-        
-        
+
         else:
             ig, ic = cluster.idl_gpus, cluster.idl_cpus
             this_time_snapshot = [ig, ic, len(job_list), 0]  # 0: no job allocated.
@@ -185,6 +184,7 @@ class Scheduler:
         cluster = cluster if cluster is not None else self.cluster
         if all([n.idl_gpus for n in cluster.node_list]) >= 0 and \
             all([n.idl_cpus for n in cluster.node_list]) >= 0:
+            print('no contentions')
             return 0  # No resource contention, bypass preemption
 
         preempted_job_list = []

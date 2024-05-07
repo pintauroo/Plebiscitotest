@@ -87,7 +87,7 @@ def plot_waiting_time_confidence_interval1(csv_files):
 
 
 
-def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
+def plot_cpu_gpu(csv_files, completed_number):
     # Initialize lists to store data for each category
     misc_cpu_data = []
     v100_cpu_data = []
@@ -110,7 +110,7 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
         print(csv_file)
         print("Number of rows:", num_rows)
         print("Number of columns:", num_columns)
-        df = df.loc[range_min:range_max].reset_index(drop=True)
+        df = df.loc[0:1000].reset_index(drop=True)
 
 
         if 'bid' in csv_file:
@@ -138,7 +138,7 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
                 elif gpu_type['node_'+str(i)+'_gpu_type'] == 'P100':
                     p100_gpu_cols.append(gpu_columns[i])
                 elif gpu_type['node_'+str(i)+'_gpu_type'] == 'T4':
-                    t4_gpu_cols.append(gpu_columns[i])
+                    t4_gpu_cols  .append(gpu_columns[i])
 
                 if gpu_type['node_'+str(i)+'_gpu_type'] == 'MISC':
                     misc_cpu_cols.append(cpu_columns[i])
@@ -159,7 +159,7 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
                 lables.append('SDF ' + str(completed_number['SDF']))
             
             cpu_columns = [col for col in df.columns if 'cpu' in col]
-            gpu_columns = [col for col in df.columns plot_simulationreportif 'gpu' in col]
+            gpu_columns = [col for col in df.columns if 'gpu' in col]
 
             misc_gpu_cols = [col for col in gpu_columns if 'MISC' in col]
             v100_gpu_cols = [col for col in gpu_columns if 'V100' in col]
@@ -223,20 +223,20 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
     legend_patches = []
 
     for i, cpu_data in enumerate([misc_cpu_data, v100_cpu_data, p100_cpu_data, t4_cpu_data]):
-        for j, position in enumerate(positions):
+        # for j, position in enumerate(positions):
             color = box_colors[i % len(box_colors)]
-            if j % 4 == 0:
+            if i % 4 == 0:
                 patch = mpatches.Patch(color=color, 
-                                       label=lables[i])
+                                       label=lables[0])
                                     #    label=['FIFO ', 'SDF', 'P_FIFO', 'P_SDF'][i])
                 legend_patches.append(patch)
-            ax_cpu.boxplot(cpu_data[j], positions=[position + positions_shift[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
+            ax_cpu.boxplot(cpu_data[0], positions=[positions[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
 
     ax_cpu.legend(handles=legend_patches, title='Legend', loc='lower left')
     ax_cpu.set_title('CPU Utilization by Model')
     ax_cpu.set_xticks(positions)
     ax_cpu.set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-    plt.savefig("cpu_boxplot.png")
+    plt.savefig("cpu_boxplot_s.png")
 
     # Plot for GPU
     fig_gpu, ax_gpu = plt.subplots(figsize=(10, 5))
@@ -245,113 +245,33 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
     for i, gpu_data in enumerate([misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data]):
         # if i % 4 == 0:
 
-        for j, position in enumerate(positions):
-            color = box_colors[j]
+        # for j, position in enumerate(positions):
+            color = box_colors[0]
             
             if i%4==0:
-                patch = mpatches.Patch(color=color, label=lables[j])
+                patch = mpatches.Patch(color=color, label=lables[0])
                 legend_patches.append(patch)
 
-            ax_gpu.boxplot(gpu_data[j], positions=[positions[i] + positions_shift[j]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
+            ax_gpu.boxplot(gpu_data[0], positions=[positions[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
 
     ax_gpu.legend(handles=legend_patches, title='Legend', loc='lower left')
     ax_gpu.set_title('GPU Utilization by Model')
     ax_gpu.set_xticks(positions)
     ax_gpu.set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-    plt.savefig("gpu_boxplot.png")
+    plt.savefig("gpu_boxplot_s.png")
 
-    #VIOLIN GPU
-    data = [misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data]
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    # Creating violin plots
-    for i, dataset in enumerate(data):
-        parts = ax.violinplot(dataset, positions=[p + 0.1 * i for p in positions], widths=0.1, showmeans=False, showextrema=False, showmedians=False)
-
-        # Coloring each violin plot
-        for pc in parts['bodies']:
-            pc.set_facecolor(box_colors[i])
-            pc.set_edgecolor('black')
-            pc.set_alpha(1)
-
-    # Creating custom legend
-    legend_patches = [mpatches.Patch(color=box_colors[i], label=lables[i]) for i in range(len(lables))]
-    ax.legend(handles=legend_patches, title='GPU Types', loc='best')
-
-    ax.set_title('GPU Utilization by Model')
-    ax.set_xticks([p + 0.15 for p in positions])
-    ax.set_xticklabels(lables)
-    ax.set_xlabel('GPU Type')
-    ax.set_ylabel('Utilization (%)')
-
-    plt.savefig("gpu_violin_plot.png")
-
-    # Plot the confidence intervals
-    fig, axs = plt.subplots(1, 2, figsize=(20, 5))
-
-    # Add a shift to each box
-    box_width = 0.2
-    positions = [1, 2, 3, 4]
-    positions_shift = [-0.4, -0.2, 0, 0.2]
-    box_colors = ['red', 'green', 'blue', 'orange']
-
-    # Store legend patches
-    legend_patches = []
-
-    # Modify the boxplot calls to include colors and legend patches
-    for i, (cpu_data, gpu_data) in enumerate(zip([misc_cpu_data, v100_cpu_data, p100_cpu_data, t4_cpu_data],
-                                                [misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data])):
-        for j, position in enumerate(positions):
-            color = box_colors[i % len(box_colors)]  # Use modulo to cycle through colors for each position
-            if j%4==0:
-                if i==0:
-                    patch = mpatches.Patch(color=color, label='FIFO')
-                elif i==1:
-                    patch = mpatches.Patch(color=color, label='SDF')
-                elif i==2:
-                    patch = mpatches.Patch(color=color, label='P_FIFO')
-                elif i==3:
-                    patch = mpatches.Patch(color=color, label='P_SDF') 
-                legend_patches.append(patch)
-            axs[0].boxplot(cpu_data[j], positions=[position + positions_shift[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
-            axs[1].boxplot(gpu_data[j], positions=[position + positions_shift[i]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
-
-    # Add legends
-    axs[0].legend(handles=legend_patches, title='Legend', loc='upper left')
-    axs[1].legend(handles=legend_patches, title='Legend', loc='upper left')
-
-    axs[0].set_title('CPU')
-    axs[0].set_xticks(positions)
-    axs[0].set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-
-    axs[1].set_title('GPU')
-    axs[1].set_xticks(positions)
-    axs[1].set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-
-    plt.savefig("boxcpu_gpu.png")
 
 
 
 
 # csvs = ['1_LGF_FIFO_0_nosplit_norebid_jobs_report.csv','1jobs_FIFO_LGF.csv','1_LGF_SDF_0_nosplit_norebid_jobs_report.csv','1jobs_SDF_LGF.csv']
-csvs = ['2_UTIL_FIFO_0_nosplit_norebid_allocations.csv',
-        '2jobs_FIFO_UTIL.csv',
-        '2_UTIL_SDF_0_nosplit_norebid_allocations.csv',
-        '2jobs_SDF_UTIL.csv']
+csvs = ['1_UTIL_FIFO_0_nosplit_norebid_jobs_report.csv','1jobs_FIFO_UTIL.csv','1_UTIL_SDF_0_nosplit_norebid_jobs_report.csv','1jobs_SDF_UTIL.csv']
 
 completed_number = {}
-print('')
-
-range_min = 2000
-range_max =2500
 for csv_file in csvs:
-    print(csv_file)
     df = pd.read_csv('/home/andrea/projects/Plebiscitotest/'+csv_file)
-    if 'allocations' in csv_file:
-        print('max',max(df['exec_time'] + df['duration'] ))
-
-        filtered_df = df[df['exec_time'] < range_max]
+    if 'report' in csv_file:
+        filtered_df = df[df['submit_time'] + df['duration'] < 6000]
         count = filtered_df.shape[0]
         print(csv_file, count)
         if 'FIFO' in csv_file:
@@ -361,9 +281,7 @@ for csv_file in csvs:
 
         
     else:
-        print('max',max(df['allocated_at'] + df['duration'] ))
-
-        filtered_df = df[df['allocated_at'] < range_max]
+        filtered_df = df[df['allocated_at'] + df['duration'] < 6000]
         count = filtered_df.shape[0]
         print(csv_file,count)
         if 'FIFO' in csv_file:
@@ -371,11 +289,9 @@ for csv_file in csvs:
         elif 'SDF' in csv_file:
             completed_number['SDF'] = count
 
-csvs = ['2_UTIL_FIFO_0_nosplit_norebid.csv',
-        '2data_FIFO_UTIL.csv',
-        '2_UTIL_SDF_0_nosplit_norebid.csv',
-        '2data_SDF_UTIL.csv']
+csvs = ['1_UTIL_FIFO_0_nosplit_norebid.csv']
 
-plot_cpu_gpu(csvs, completed_number, range_min, range_max)
+plot_cpu_gpu(csvs, completed_number)
+
 
 

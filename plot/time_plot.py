@@ -2,12 +2,6 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_cpu_gpu_time(csv_files):
-    
-    num_files = len(csv_files)
-    fig, axs = plt.subplots(num_files, 2, figsize=(10import os
-import pandas as pd
-import matplotlib.pyplot as plt
 
 def plot_cpu_gpu_time(csv_files):
     
@@ -143,7 +137,7 @@ def read_csv_files_in_directory(directory):
     return csvs
 
 
-directory_path = '/home/crownlabs/Plebiscitotest/cluster-trace-gpu-v2020/simulator/res/'
+directory_path = '/home/andrea/projects/Plebiscitotest/'
 csvs = read_csv_files_in_directory(directory_path)
 
 # Example usage

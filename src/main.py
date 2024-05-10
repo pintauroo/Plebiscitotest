@@ -13,6 +13,7 @@ from Plebiscito.src.simulator import Simulator_Plebiscito
 from Plebiscito.src.config import ApplicationGraphType, DebugLevel, SchedulingAlgorithm, Utility
 from Plebiscito.src.dataset_builder import generate_dataset
 from kubernetes.kubernetes_scheduler import KubernetesScheduler
+from FGD.src.simulator import FGD
 
 from Alibaba.dataset_loader import init_go_
 from Alibaba.simulator import Simulator
@@ -35,9 +36,9 @@ def generate_node_failures(n_nodes, n_failures, n_jobs):
 
 
 if __name__ == '__main__':
-    NUM_JOBS = 1000 #args.num_jobs
-    n_nodes = 30
-    n_failure = 0
+    NUM_JOBS = 440 #args.num_jobs
+    n_nodes = 50
+    n_failure = 2
     
     # # ------ START FROM ALIBABA -------
     
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     NUM_CPUS = round(23.22 * NUM_GPUS)  # 23.22 * num_gpus 156576/6742
     HETERO = True  # heterogeneous cluster
     PATTERN = 0  # Cluster capacity varying pattern
-    GPU_TYPE_MATCHING = 1 # GPU type perfect match
+    GPU_TYPE_MATCHING = 0 # GPU type perfect match
     EXPORT_JOB_STATS = True
     EXPORT_CLUSTER_UTIL = True
     RANDOM_SEED = 42
@@ -89,46 +90,46 @@ if __name__ == '__main__':
     # # ------ START ALIBABA SIMULATION -------
     
     # for alloc_policy in [0, 1, 2, 4, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-    for alloc_policy in [0, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-    # for alloc_policy in [8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-        # for preempt_policy in [2]:  # 2LGF
-        preempt_policy =2
-        for sorting_policy in [0, 1, 2, 3]:  
-        # for sorting_policy in [3]:  
-            print('INIT,', str(alloc_policy),', ', str(sorting_policy))
+    # for alloc_policy in [0, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+    # # for alloc_policy in [8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+    #     # for preempt_policy in [2]:  # 2LGF
+    #     preempt_policy =2
+    #     for sorting_policy in [0, 1, 2, 3]:  
+    #     # for sorting_policy in [3]:  
+    #         print('INIT,', str(alloc_policy),', ', str(sorting_policy))
 
-            key = (alloc_policy, preempt_policy)
-            print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
+    #         key = (alloc_policy, preempt_policy)
+    #         print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
 
-            # running
-            start_time = time.time()
-            print_fn("\n###### %s ######" % print_key)
+    #         # running
+    #         start_time = time.time()
+    #         print_fn("\n###### %s ######" % print_key)
 
-            simulator = Simulator(
-                csv_file=CSV_FILE_PATH / CSV_FILE,
-                alloc_policy=alloc_policy,
-                preempt_policy=preempt_policy,
-                sort_node_policy=sorting_policy,
-                num_nodes=NUM_NODES,
-                random_seed=RANDOM_SEED,
-                max_time=MAX_TIME,
-                num_spare_node=NUM_SPARE_NODE,
-                pattern=PATTERN,
-                hetero=HETERO,
-                num_gpus=NUM_GPUS,
-                num_cpus=NUM_CPUS,
-                describe_file=describe_file,
-                log_file=log_file,
-                export_job_stats=EXPORT_JOB_STATS,
-                export_cluster_util=EXPORT_CLUSTER_UTIL,
-                arrival_rate=ARRIVAL_RATE,
-                num_jobs_limit=NUM_JOBS,
-                gpu_type_matching=GPU_TYPE_MATCHING,
-                verbose=VERBOSE,
-                dataset=dataset,
-                repetition=rep)
-            results = simulator.simulator_go(repeat=REPEAT)
-            print('done,', str(alloc_policy),', ', str(sorting_policy))
+    #         simulator = Simulator(
+    #             csv_file=CSV_FILE_PATH / CSV_FILE,
+    #             alloc_policy=alloc_policy,
+    #             preempt_policy=preempt_policy,
+    #             sort_node_policy=sorting_policy,
+    #             num_nodes=NUM_NODES,
+    #             random_seed=RANDOM_SEED,
+    #             max_time=MAX_TIME,
+    #             num_spare_node=NUM_SPARE_NODE,
+    #             pattern=PATTERN,
+    #             hetero=HETERO,
+    #             num_gpus=NUM_GPUS,
+    #             num_cpus=NUM_CPUS,
+    #             describe_file=describe_file,
+    #             log_file=log_file,
+    #             export_job_stats=EXPORT_JOB_STATS,
+    #             export_cluster_util=EXPORT_CLUSTER_UTIL,
+    #             arrival_rate=ARRIVAL_RATE,
+    #             num_jobs_limit=NUM_JOBS,
+    #             gpu_type_matching=GPU_TYPE_MATCHING,
+    #             verbose=VERBOSE,
+    #             dataset=dataset,
+    #             repetition=rep)
+    #         results = simulator.simulator_go(repeat=REPEAT)
+    #         print('done,', str(alloc_policy),', ', str(sorting_policy))
             
     # # ------ END ALIBABA SIMULATION -------
     
@@ -146,14 +147,19 @@ if __name__ == '__main__':
         job_dict["current_duration"] = 0 # this value keeps track of the job's current duration with respect to the speedup. Not useful to plot, it is used for internal purposes
         job_dict["speedup"] = 1
         
-    dataset = pd.DataFrame(dataset)
+    dataset = pd.DataFrame(dataset)    # nodes = simulator1.get_nodes()
+    #simulator.run()
+    
 
-    utils = ['SPEEDUP', 'SPEEDUPV2', "LGF", "UTIL"]  
-    sched = ['FIFO', 'SDF']
+    utils = ["FGD"]  
+    # utils = ["UTIL", "LGF", "SGF"]  
+
+    sched = ['SDF']
     split = [False]
-    rebid = [True, False]
+    rebid = [False]
     # dec_factor = [0, .25, .5, .75, 1]
     dec_factor = [0]
+    first = False
 
     for u in utils:
         utility = getattr(Utility, u, None)
@@ -161,9 +167,9 @@ if __name__ == '__main__':
             print(f"Warning: '{u}' is not a valid Utility member.")
             continue
         
-        dec_factor = [0]
-        if u == "LGF":
-            dec_factor = [0, 1]
+        # dec_factor = [0]
+        # if u == "LGF":
+        #     dec_factor = [1]
 
         for s in sched:
             scheduling_algorithm = getattr(SchedulingAlgorithm, s, None)
@@ -174,7 +180,7 @@ if __name__ == '__main__':
             for sp in split:
                 for rb in rebid:
                     for dc in dec_factor:
-                        simulator = Simulator_Plebiscito(filename=rep,
+                        simulator = Simulator_Plebiscito(filename=rep+"_fail",
                                             n_nodes=n_nodes,
                                             n_jobs=NUM_JOBS,
                                             dataset=dataset,
@@ -187,10 +193,10 @@ if __name__ == '__main__':
                                             split=sp,
                                             enable_post_allocation=rb,
                                             decrement_factor=dc)
+                        if not first:
+                            adj = simulator.get_adjacency_matrix()
+
                         simulator.run()
-    
-    # nodes = simulator1.get_nodes()
-    # adj = simulator1.get_adjacency_matrix()
     
     # simulator_kubernetes = KubernetesScheduler(nodes, dataset, "kubernetes", ApplicationGraphType.LINEAR, True, adj, failures)
     
@@ -200,6 +206,10 @@ if __name__ == '__main__':
     
     # ------ END PLEBISCITO SIMULATION -------
     
+    
+    # ------ BEGIN FGD --------
+    FGDSim = FGD(n_nodes, dataset, rep + "_fail_FGD_", ApplicationGraphType.LINEAR, False, adj, failures)
+    FGDSim.run()
     
     
     

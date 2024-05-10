@@ -105,7 +105,7 @@ def _add_job(job_list, job_dict, describe_dict=None):
                 job_dict[key] = 1
         else:
             if key in ['num_cpu', 'num_gpu']:  # in %
-                job_dict[key] = float(job_dict[key]) #round(100 * float(job_dict[key]))
+                job_dict[key] = round(float(job_dict[key]), 2)#round(100 * float(job_dict[key]))
             else:
                 job_dict[key] = round(float(job_dict[key]))
         if key == 'num_inst':
@@ -114,7 +114,7 @@ def _add_job(job_list, job_dict, describe_dict=None):
 
     # Add entries to be used in scheduling
     job_dict['duration'] = int(float(job_dict['duration'])) # if int(float(job_dict['duration']))< 2000 else 2000
-    # job_dict['duration'] = 1
+    job_dict['duration'] = 2500
     # if job_dict['duration'] <= 0:
     #     job_dict['duration'] = 1  # fix duration == 0 problem.
     job_dict['size'] = int((job_dict['num_gpu'] + job_dict['num_cpu']) * job_dict['duration']) # (gpu + cpu) x duration
@@ -139,27 +139,33 @@ def _add_job(job_list, job_dict, describe_dict=None):
     
     job_dict['allocated_at'] = 0
 
-    if job_dict['num_gpu'] != 0:
-        if job_dict['gpu_type'] == 'MISC':
-            if job_dict['num_gpu'] <= 8 and job_dict['num_cpu'] <96:
-                job_list.append(job_dict)
+    #if job_dict['num_gpu'] != 0:
+    if job_dict['gpu_type'] == 'MISC':
+        if job_dict['num_gpu'] <= 1 and job_dict['num_cpu'] <96:
+            job_list.append(job_dict)
+        # else:
+        #     print(job_dict)
+    if job_dict['gpu_type'] == 'P100':
+        if job_dict['num_gpu'] <= 1 and job_dict['num_cpu'] <64:
+            job_list.append(job_dict)
+        # else:
+        #     print(job_dict)
+    if job_dict['gpu_type'] == 'T4':
+        if job_dict['num_gpu'] <= 1 and job_dict['num_cpu'] <96:
+            job_list.append(job_dict)
+        # else:
+        #     print(job_dict)
+    if job_dict['gpu_type'] == 'V100':
+        if job_dict['num_gpu'] <= 1 and job_dict['num_cpu'] <96:
+            job_list.append(job_dict)
             # else:
             #     print(job_dict)
-        if job_dict['gpu_type'] == 'P100':
-            if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <64:
-                job_list.append(job_dict)
-            # else:
-            #     print(job_dict)
-        if job_dict['gpu_type'] == 'T4':
-            if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <96:
-                job_list.append(job_dict)
-            # else:
-            #     print(job_dict)
-        if job_dict['gpu_type'] == 'V100':
-            if job_dict['num_gpu'] <= 8 and job_dict['num_cpu'] <96:
-                job_list.append(job_dict)
-            # else:
-            #     print(job_dict)
+    if job_dict['gpu_type'] == 'CPU':
+        if job_dict['num_cpu'] < 96:
+            job_dict['gpu_type'] = "V100" # to make it compatible with the simulator
+            job_list.append(job_dict)
+        # else:
+        #     print(job_dict)
     # job_list.append(job_dict)
     
 

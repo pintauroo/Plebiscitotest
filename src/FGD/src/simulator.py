@@ -178,6 +178,7 @@ class FGD:
         j['exec_time'] =  time_instant
         j['NN_cpu'] = data['NN_cpu']
         j['NN_gpu'] = data['NN_gpu']
+        j["num_gpu"] = float(data['NN_gpu'][0])
         running_jobs.append(j)
         
     def compute_allocation(self, job):
@@ -210,7 +211,7 @@ class FGD:
                 self.compute_nodes[best_location].allocate(job["job_id"], job["NN_cpu"][i], job["NN_gpu"][i], i)
                 best_allocation[i] = best_location
                 for i in range(self.n_nodes):
-                    if i != best_location:
+                    if i != best_location and i in connected_nodes:
                         self.compute_nodes[i].invalidate_job(job["job_id"])
             else:
                 for j in range(i):

@@ -229,30 +229,44 @@ class Simulator:
                     gpu = node.num_gpus- node.idl_gpus
                     cpu = node.num_cpus- node.idl_cpus
                     id = node.id
-                    if str(id)+'cpu'+str(node.gpu_type) not in dic:
-                        dic[str(id)+'cpu'+str(node.gpu_type)]=[]
-                    if str(id)+'gpu'+str(node.gpu_type) not in dic:
-                        dic[str(id)+'gpu'+str(node.gpu_type)]=[]
-                    dic[str(id)+'cpu'+str(node.gpu_type)].append(cpu)
-                    dic[str(id)+'gpu'+str(node.gpu_type)].append(gpu)
+                    if "node_" + str(id) + "_initial_cpu" not in dic:
+                        dic["node_" + str(id) + "_initial_cpu"] = []
+                    if "node_" + str(id) + "_initial_gpu" not in dic:
+                        dic["node_" + str(id) + "_initial_gpu"] = []
+                    if "node_" + str(id) + "_used_cpu" not in dic:
+                        dic["node_" + str(id) + "_used_cpu"] = []
+                    if "node_" + str(id) + "_used_gpu" not in dic:
+                        dic["node_" + str(id) + "_used_gpu"] = []
+                    
+                    dic["node_" + str(id) + "_initial_cpu"].append(node.num_cpus)
+                    dic["node_" + str(id) + "_initial_gpu"].append(node.num_gpus)
+                    dic["node_" + str(id) + "_used_cpu"].append(cpu)
+                    dic["node_" + str(id) + "_used_gpu"].append(gpu)
             
             for node in self.cluster.node_list:
                 gpu = node.num_gpus- node.idl_gpus
                 cpu = node.num_cpus- node.idl_cpus
                 id = node.id
-                if str(id)+'cpu'+str(node.gpu_type) not in dic:
-                    dic[str(id)+'cpu'+str(node.gpu_type)]=[]
-                if str(id)+'gpu'+str(node.gpu_type) not in dic:
-                    dic[str(id)+'gpu'+str(node.gpu_type)]=[]
-                dic[str(id)+'cpu'+str(node.gpu_type)].append(cpu)
-                dic[str(id)+'gpu'+str(node.gpu_type)].append(gpu)
+                if "node_" + str(id) + "_initial_cpu" not in dic:
+                        dic["node_" + str(id) + "_initial_cpu"] = []
+                if "node_" + str(id) + "_initial_gpu" not in dic:
+                    dic["node_" + str(id) + "_initial_gpu"] = []
+                if "node_" + str(id) + "_used_cpu" not in dic:
+                    dic["node_" + str(id) + "_used_cpu"] = []
+                if "node_" + str(id) + "_used_gpu" not in dic:
+                    dic["node_" + str(id) + "_used_gpu"] = []
+                
+                dic["node_" + str(id) + "_initial_cpu"].append(node.num_cpus)
+                dic["node_" + str(id) + "_initial_gpu"].append(node.num_gpus)
+                dic["node_" + str(id) + "_used_cpu"].append(cpu)
+                dic["node_" + str(id) + "_used_gpu"].append(gpu)
 
             # print(self.cluster.job_history) # .job_done_list.sort(key=lambda e: e['job_id'])
             # Save the dictionary to a CSV file
             if not os.path.exists(directory):
                 os.makedirs(directory)
             a, s = self.policy_name_converter(self.alloc_policy, self.sort_node_policy)
-            with open(str(self.rep)+'data_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
+            with open(str(self.rep)+'_data_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(dic.keys())
                 writer.writerows(zip(*dic.values()))
@@ -260,7 +274,7 @@ class Simulator:
             jobbe = self.scheduler.jobs
 
 
-            with open(str(self.rep)+'jobs_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
+            with open(str(self.rep)+'_jobs_'+str(a)+'_'+str(s)+'.csv', mode='w') as file:
                 writer = csv.writer(file)
                 writer.writerow(['job_id', 'submit_time', 'duration', 'jct', 'num_inst', 'gpu_type', 'num_cpu', 'num_gpu', 'size', 'wasted', 'resource', 'node', 'allocated_at', 'waiting_time', 'progress'])
                 for job in jobbe:

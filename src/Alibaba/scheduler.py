@@ -20,7 +20,10 @@ class Scheduler:
     def alloc_job(self, cluster=None):
         cluster = cluster if cluster is not None else self.cluster
         job_list = cluster.job_list  # Take cluster.job_list
-
+        # job_list.extend(cluster.job_runn_list)  # Take cluster.job_list
+        print('\n-----CLUSTER JOB LIST ALLOC!')
+        for j in cluster.job_list:
+            print(j['job_id'], j['status'] if 'status' in j else 'None')
         # Trying skipping allocation as early as possible
         if len(job_list) == 0 and not cluster.jobs_done:
             return -2
@@ -48,9 +51,11 @@ class Scheduler:
                 # Heavy action
                 self.alloc_job_sort(job_list, cluster.job_runn_list)
                 for job_a in job_list:
+                    print('allocating job:', job_a['job_id'])
                     succ_alloc = self.try_allocate_job_to_cluster(job_a, cluster)
                     if succ_alloc == 1:
                         job_to_allocate_cache.append(job_a)
+                        job_a['status'] = 'running'
                     elif succ_alloc == -1:
                         break
                     # else, e.g., succ_alloc == 0: pass/continue
@@ -67,6 +72,11 @@ class Scheduler:
             job_list.sort(key=lambda e: (e['duration'], e['job_id']))
         elif self.alloc_policy == 8:  # FIFO, remains the original order
             job_list.sort(key=lambda e: (e['submit_time'], e['job_id']))
+        elif self.alloc_policy == 16:  # FIFO, remains the original order
+            for j in job_list:
+                if 'execution_time' not in j:
+                    j['execution_time'] = 0
+            job_list.sort(key=lambda e: (e['execution_time'], e['job_id']))
         elif self.alloc_policy in [1, 2, 4]:  # SJF with duration estimation
             est_feature = {1: 'user_dur', 2: 'group_dur', 4: 'group_gpu_dur'}[self.alloc_policy]
             job_list.sort(key=lambda e: (e[est_feature], e['job_id']))
@@ -93,77 +103,118 @@ class Scheduler:
         if ig <= 0 and ic <= 0:
             return -1
         elif job_a['num_inst'] * job_a['num_gpu'] > ig or job_a['num_inst'] * job_a['num_cpu'] > ic:
+            if self.alloc_policy == 16:
+                if 'waiting_for' not in job_a:
+                    job_a['waiting_for'] = 0
+                job_a['waiting_for'] += 1
+                if job_a['waiting_for'] >= 100:
+                    print_fn("Job %s has waited for %d times." % (job_a['job_id'], job_a['waiting_for']))
+                    job_a['execution_time'] = 0
+
             return 0
         else:  # with in gpu and cpu limits
             assigned_node_map = {}
             assigned_inst_num = 0
             sorted_node_list = self.sorted_node_list(cluster.node_list)
-            for nid, node in enumerate(sorted_node_list):
-                # <Node-job label matching>
-                if self.gpu_type_matching == 1:  # GPU type perfect match
-                    if job_a['gpu_type'] != 'CPU' and job_a['gpu_type'] != node.gpu_type:
-                        continue  # cannot on this node
-                elif self.gpu_type_matching == 2:  # Only V100 cannot compromise
-                    if job_a['gpu_type'] == 'V100' and job_a['gpu_type'] != node.gpu_type:
-                        continue  # cannot on this node
-                # </Node-job label matching>
 
-                if job_a['num_inst'] == 1:
-                    if job_a['num_gpu'] <= node.idl_gpus and job_a['num_cpu'] <= node.idl_cpus:
+            if 'node' in job_a and job_a['node'] != None:
+                print('reallocating', job_a['job_id'], 'on node:', job_a['node'])
+                for j, node in enumerate(sorted_node_list):
+                    if node.id == job_a['node']:
                         succ_alloc = node.alloc_job(job_a)
-                        assert succ_alloc
-                        job_a['node'] = node.id
-                        job_a['allocated_at'] = self.cluster.cur_time
-                        job_a['waiting_time'] = job_a['submit_time'] - job_a['allocated_at']
-                        host_gpu_type = GPUSupport.get_gpu_type(node.gpu_type)
-                        job_gpu_type = GPUSupport.get_gpu_type(job_a['gpu_type'])
-                        job_a['speedup'] = GPUSupport.compute_speedup(host_gpu_type, job_gpu_type)
-                        print('SPEEDUP:', job_a['speedup'], host_gpu_type, job_gpu_type, job_a['duration'], job_a['speedup'], job_a['duration'] / job_a['speedup'])
-                        job_a['duration'] /= job_a['speedup']
-                        self.jobs.append(job_a)
-                        print_fn("%sON  : N[%d] %s" % (cluster.log_prefix, job_a['node'], job_a))
-                        self.display_node_status(cur_node_id=job_a['node'])
-                        return 1
-                else:  # gang-scheduling: all or nothing
-                    node_idle_gpus, node_idle_cpus = node.idl_gpus, node.idl_cpus
-                    node_inst_num_gpu, node_inst_num_cpu = job_a['num_inst'], job_a['num_inst']  # init.
-                    if job_a['num_gpu'] != 0:
-                        node_inst_num_gpu = node_idle_gpus // job_a['num_gpu']
-                    if job_a['num_cpu'] != 0:
-                        node_inst_num_cpu = node_idle_cpus // job_a['num_cpu']
-                    node_inst_num = min(node_inst_num_gpu, node_inst_num_cpu)
+                        
 
-                    if assigned_inst_num + node_inst_num >= job_a['num_inst']:
-                        node_inst_num = job_a['num_inst'] - assigned_inst_num
-                        assigned_node_map[nid] = node_inst_num
-                        assigned_inst_num += node_inst_num
-                        break
-                    elif node_inst_num > 0:
-                        assigned_node_map[nid] = node_inst_num
-                        assigned_inst_num += node_inst_num
+                        if succ_alloc:
+                            job_a['execution_time'] += 1
+                            return 1
+                        else:
+                            print('cant allocate job:', job_a['job_id'])
+                            if self.alloc_policy == 16:
+                                if 'waiting_for' not in job_a:
+                                    job_a['waiting_for'] = 0
 
-            if assigned_inst_num < job_a['num_inst']:
-                print_fn("Cannot allocate all instances (%d/%d) of %s." % (assigned_inst_num, job_a['num_inst'], _repr_job_concise(job_a)))
-                self.cannot_counter += 1
-                if self.cannot_counter % 100000 == 0:
-                    print_fn("[%s] %d rejects. len(job_done_list) = %d. Current job: %s." % (cluster.log_prefix, self.cannot_counter, len(self.cluster.job_history.job_done_list), _repr_job_concise(job_a)))
-                return 0  # No successful allocation, for num_inst=1 and >1 cases
+                                if job_a['waiting_for'] >= 100:
+                                    print_fn("Job %s has waited for %d times." % (job_a['job_id'], job_a['waiting_for']))
+                                    job_a['execution_time'] = 0
+                            return 0
             else:
-                # Successfully Scheduled. Assigning instances to nodes according to the map
-                inst_id = 0
-                for nid, num_inst in assigned_node_map.items():
-                    node = sorted_node_list[nid]
-                    job_tmp = {'node': -1}
-                    for _ in range(num_inst):
-                        job_tmp = job_a.copy()
-                        job_tmp['inst_id'] = inst_id
-                        succ_alloc = node.alloc_job(job_tmp)
-                        assert succ_alloc
-                        job_tmp['node'] = node.id
-                        print_fn("%sON  : N[%d] %s Inst[%d]" % (cluster.log_prefix, job_tmp['node'], job_tmp, inst_id))
-                        inst_id += 1
-                    self.display_node_status(cur_node_id=job_tmp['node'])
-                assert inst_id == job_a['num_inst']
+                for nid, node in enumerate(sorted_node_list):
+
+                # <Node-job label matching>
+                    if self.gpu_type_matching == 1:  # GPU type perfect match
+                        if job_a['gpu_type'] != 'CPU' and job_a['gpu_type'] != node.gpu_type:
+                            continue  # cannot on this node
+                    elif self.gpu_type_matching == 2:  # Only V100 cannot compromise
+                        if job_a['gpu_type'] == 'V100' and job_a['gpu_type'] != node.gpu_type:
+                            continue  # cannot on this node
+                    # </Node-job label matching>
+
+                    if job_a['num_inst'] == 1:
+                        if job_a['num_gpu'] <= node.idl_gpus and job_a['num_cpu'] <= node.idl_cpus:
+                            succ_alloc = node.alloc_job(job_a)
+                            assert succ_alloc
+                            job_a['node'] = node.id
+                            job_a['allocated_at'] = self.cluster.cur_time
+                            job_a['waiting_time'] = job_a['submit_time'] - job_a['allocated_at']
+                            job_a['execution_time'] = 0
+                            # host_gpu_type = GPUSupport.get_gpu_type(node.gpu_type)
+                            # job_gpu_type = GPUSupport.get_gpu_type(job_a['gpu_type'])
+                            # job_a['speedup'] = GPUSupport.compute_speedup(host_gpu_type, job_gpu_type)
+                            # print('SPEEDUP:', job_a['speedup'], host_gpu_type, job_gpu_type, job_a['duration'], job_a['speedup'], job_a['duration'] / job_a['speedup'])
+                            # job_a['duration'] /= job_a['speedup']
+                            self.jobs.append(job_a)
+                            print_fn("%sON  : N[%d] %s" % (cluster.log_prefix, job_a['node'], job_a))
+                            self.display_node_status(cur_node_id=job_a['node'])
+                            return 1
+                        else:
+                            if self.alloc_policy == 16:
+                                if 'waiting_for' not in job_a:
+                                    job_a['waiting_for'] = 0
+
+                                job_a['waiting_for'] += 1
+                                if job_a['waiting_for'] >= 100:
+                                    print_fn("Job %s has waited for %d times." % (job_a['job_id'], job_a['waiting_for']))
+                                    job_a['execution_time'] = 0
+                    else:  # gang-scheduling: all or nothing
+                        node_idle_gpus, node_idle_cpus = node.idl_gpus, node.idl_cpus
+                        node_inst_num_gpu, node_inst_num_cpu = job_a['num_inst'], job_a['num_inst']  # init.
+                        if job_a['num_gpu'] != 0:
+                            node_inst_num_gpu = node_idle_gpus // job_a['num_gpu']
+                        if job_a['num_cpu'] != 0:
+                            node_inst_num_cpu = node_idle_cpus // job_a['num_cpu']
+                        node_inst_num = min(node_inst_num_gpu, node_inst_num_cpu)
+
+                        if assigned_inst_num + node_inst_num >= job_a['num_inst']:
+                            node_inst_num = job_a['num_inst'] - assigned_inst_num
+                            assigned_node_map[nid] = node_inst_num
+                            assigned_inst_num += node_inst_num
+                            break
+                        elif node_inst_num > 0:
+                            assigned_node_map[nid] = node_inst_num
+                            assigned_inst_num += node_inst_num
+
+                if assigned_inst_num < job_a['num_inst']:
+                    print_fn("Cannot allocate all instances (%d/%d) of %s." % (assigned_inst_num, job_a['num_inst'], _repr_job_concise(job_a)))
+                    self.cannot_counter += 1
+                    if self.cannot_counter % 100000 == 0:
+                        print_fn("[%s] %d rejects. len(job_done_list) = %d. Current job: %s." % (cluster.log_prefix, self.cannot_counter, len(self.cluster.job_history.job_done_list), _repr_job_concise(job_a)))
+                    return 0  # No successful allocation, for num_inst=1 and >1 cases
+                else:
+                    # Successfully Scheduled. Assigning instances to nodes according to the map
+                    inst_id = 0
+                    for nid, num_inst in assigned_node_map.items():
+                        node = sorted_node_list[nid]
+                        job_tmp = {'node': -1}
+                        for _ in range(num_inst):
+                            job_tmp = job_a.copy()
+                            job_tmp['inst_id'] = inst_id
+                            succ_alloc = node.alloc_job(job_tmp)
+                            assert succ_alloc
+                            job_tmp['node'] = node.id
+                            print_fn("%sON  : N[%d] %s Inst[%d]" % (cluster.log_prefix, job_tmp['node'], job_tmp, inst_id))
+                            inst_id += 1
+                        self.display_node_status(cur_node_id=job_tmp['node'])
+                    assert inst_id == job_a['num_inst']
                 return 1
 
     def sorted_node_list(self, node_list):
@@ -179,6 +230,42 @@ class Scheduler:
         else:
             node_list.sort(key=lambda n: n.id)
         return node_list
+
+    def preempt_job_tiresias(self, cluster=None):
+        print('\n-----PREEMPTION')
+        cluster = cluster if cluster is not None else self.cluster
+        preempted_job_list = []
+
+        # for node in cluster.node_list:
+
+        #     for job_j in node.job_runn_list:
+        for job_j in cluster.job_runn_list:
+            if 'execution_time' not in job_j:
+                job_j['execution_time'] = 0
+            if 'waiting_for' not in job_j:
+                job_j['waiting_for'] = 0
+
+            if 'status' in job_j and job_j['status'] == 'running':
+                for node in cluster.node_list:
+                    if node.id == job_j['node']:
+                        print('preempting job:', job_j['job_id'],job_j['node'], node.id)
+                        succ = node.release_job(job_j)
+                        assert succ is True
+                        job_j['status'] = 'preempted'
+
+                        if not any(job['job_id'] == job_j['job_id'] for job in cluster.job_list):
+                            cluster.job_list.append(job_j)
+                        else:
+                            print("Job already in the list.", job_j['job_id'])
+            else:
+                print('KTM!!!! job:', job_j['job_id'], 'status:', job_j['status'])
+
+        print('\n-----CLUSTER JOB LIST PREEMPTION')
+        for j in cluster.job_list:
+            print('++',j['job_id'])
+
+    
+    
 
     def preempt_job(self, cluster=None):
         cluster = cluster if cluster is not None else self.cluster
@@ -213,25 +300,25 @@ class Scheduler:
         node.update_idl_gpus()
         node.update_idl_cpus()
 
-        if self.preempt_policy in PREEMPT_POLICY_DICT.keys():
-            # Sort node.job_runn_list in place
-            self.preempt_job_sort_node(node=node, preempt_policy=self.preempt_policy)
+        # if self.preempt_policy in PREEMPT_POLICY_DICT.keys():
+        #     # Sort node.job_runn_list in place
+        #     self.preempt_job_sort_node(node=node, preempt_policy=self.preempt_policy)
 
-            for job_i in preempted_job_list:
-                for job_j in node.job_runn_list:
-                    if job_i['job_id'] == job_j['job_id']:  # these instances belong to the same job
-                        succ = node.release_job(job_i)
-                        assert succ is True
-                        preempted_job_list.append(job_i)
+        for job_i in preempted_job_list:
+            for job_j in node.job_runn_list:
+                if job_i['job_id'] == job_j['job_id']:  # these instances belong to the same job
+                    succ = node.release_job(job_i)
+                    assert succ is True
+                    preempted_job_list.append(job_i)
 
-            while node.idl_gpus < 0 or node.idl_cpus < 0:
-                job_to_preempt = node.job_runn_list[0]
-                succ = node.release_job(job_to_preempt)
-                assert succ is True
-                preempted_job_list.append(job_to_preempt)
+        while node.idl_gpus < 0 or node.idl_cpus < 0:
+            job_to_preempt = node.job_runn_list[0]
+            succ = node.release_job(job_to_preempt)
+            assert succ is True
+            preempted_job_list.append(job_to_preempt)
 
-        else:
-            raise KeyError("Uncaptured Preemption Policy Input: %d" % self.preempt_policy)
+        # else:
+        #     raise KeyError("Uncaptured Preemption Policy Input: %d" % self.preempt_policy)
 
         return preempted_job_list
 

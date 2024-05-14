@@ -123,6 +123,8 @@ def _add_job(job_list, job_dict, describe_dict=None):
     job_dict['jct'] = -1
     job_dict['resource'] = [job_dict['num_gpu'], job_dict['num_cpu']] # list of resources
     job_dict['node'] = None
+    job_dict['waiting_for'] = 0
+    job_dict['executed_for'] = 0
 
     # Add duration estimation
     if describe_dict is not None:
@@ -145,19 +147,19 @@ def _add_job(job_list, job_dict, describe_dict=None):
                 job_list.append(job_dict)
             # else:
             #     print(job_dict)
-        if job_dict['gpu_type'] == 'P100':
-            if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <64:
-                job_list.append(job_dict)
-            # else:
-            #     print(job_dict)
-        if job_dict['gpu_type'] == 'T4':
-            if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <96:
-                job_list.append(job_dict)
-            # else:
-            #     print(job_dict)
-        if job_dict['gpu_type'] == 'V100':
-            if job_dict['num_gpu'] <= 8 and job_dict['num_cpu'] <96:
-                job_list.append(job_dict)
+        # if job_dict['gpu_type'] == 'P100':
+        #     if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <64:
+        #         job_list.append(job_dict)
+        #     # else:
+        #     #     print(job_dict)
+        # if job_dict['gpu_type'] == 'T4':
+        #     if job_dict['num_gpu'] <= 2 and job_dict['num_cpu'] <96:
+        #         job_list.append(job_dict)
+        #     # else:
+        #     #     print(job_dict)
+        # if job_dict['gpu_type'] == 'V100':
+        #     if job_dict['num_gpu'] <= 8 and job_dict['num_cpu'] <96:
+        #         job_list.append(job_dict)
             # else:
             #     print(job_dict)
     # job_list.append(job_dict)

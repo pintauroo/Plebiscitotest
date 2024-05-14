@@ -116,9 +116,9 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
         if 'bid' in csv_file:
 
             if 'FIFO' in csv_file:
-                lables.append('Plebi_FIFO ' + str(completed_number['Plebi_FIFO']))
+                lables.append('Plebi_FIFO (' + str(completed_number['Plebi_FIFO'])+ ')' )
             elif 'SDF' in csv_file:
-                lables.append('Plebi_SDF ' + str(completed_number['Plebi_SDF']))
+                lables.append('Plebi_SDF (' + str(completed_number['Plebi_SDF'])+ ')' )
             
             cpu_columns = [col for col in df.columns if 'used_cpu' in col]
             gpu_columns = [col for col in df.columns if 'used_gpu' in col]
@@ -129,12 +129,14 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
             gpu_type = {}
             for i in range(len(gpu_columns)):
                 gpu_type['node_'+str(i)+'_gpu_type'] = df['node_'+str(i)+'_gpu_type'][1]
-
+            v100 = 0
             for i in range(len(gpu_columns)):
                 if gpu_type['node_'+str(i)+'_gpu_type'] == 'MISC':
                     misc_gpu_cols.append(gpu_columns[i])
-                elif gpu_type['node_'+str(i)+'_gpu_type'] == 'V100':        
-                    v100_gpu_cols.append(gpu_columns[i])
+                elif gpu_type['node_'+str(i)+'_gpu_type'] == 'V100':  
+                    if v100 <2:
+                        v100+=1
+                        v100_gpu_cols.append(gpu_columns[i])
                 elif gpu_type['node_'+str(i)+'_gpu_type'] == 'P100':
                     p100_gpu_cols.append(gpu_columns[i])
                 elif gpu_type['node_'+str(i)+'_gpu_type'] == 'T4':
@@ -154,12 +156,14 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
 
         else:
             if 'FIFO' in csv_file:
-                lables.append('FIFO ' + str(completed_number['FIFO']))
+                lables.append('FIFO (' + str(completed_number['FIFO']) + ')' )
             elif 'SDF' in csv_file:
-                lables.append('SDF ' + str(completed_number['SDF']))
+                lables.append('SDF (' + str(completed_number['SDF'])+ ')' )
+            elif 'Tiresias' in csv_file:
+                lables.append('Tiresias ' + str(completed_number['SDF']))
             
             cpu_columns = [col for col in df.columns if 'cpu' in col]
-            gpu_columns = [col for col in df.columns plot_simulationreportif 'gpu' in col]
+            gpu_columns = [col for col in df.columns if 'gpu' in col]
 
             misc_gpu_cols = [col for col in gpu_columns if 'MISC' in col]
             v100_gpu_cols = [col for col in gpu_columns if 'V100' in col]
@@ -239,26 +243,30 @@ def plot_cpu_gpu(csv_files, completed_number, range_min, range_max):
     plt.savefig("cpu_boxplot.png")
 
     # Plot for GPU
+
+    # Plot for GPU
     fig_gpu, ax_gpu = plt.subplots(figsize=(10, 5))
     legend_patches = []
 
     for i, gpu_data in enumerate([misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data]):
-        # if i % 4 == 0:
-
         for j, position in enumerate(positions):
             color = box_colors[j]
             
-            if i%4==0:
+            if i % 4 == 0:
                 patch = mpatches.Patch(color=color, label=lables[j])
                 legend_patches.append(patch)
 
             ax_gpu.boxplot(gpu_data[j], positions=[positions[i] + positions_shift[j]], widths=box_width, patch_artist=True, boxprops=dict(facecolor=color))
 
-    ax_gpu.legend(handles=legend_patches, title='Legend', loc='lower left')
-    ax_gpu.set_title('GPU Utilization by Model')
+    ax_gpu.legend(handles=legend_patches, title='Legend', loc='lower left', fontsize=15, title_fontsize=14)  # Adjust legend font sizes
     ax_gpu.set_xticks(positions)
-    ax_gpu.set_xticklabels(['MISC', 'V100', 'P100', 'T4'])
-    plt.savefig("gpu_boxplot.png")
+    ax_gpu.set_xticklabels(['MISC', 'V100', 'P100', 'T4'], fontsize=15)  # Adjust x-tick label font size
+    ax_gpu.set_yticklabels(ax_gpu.get_yticks(), fontsize=15)  # Adjust y-tick label font size
+    ax_gpu.set_ylabel('GPU %', fontsize=15)  # Add y-axis label
+
+    plt.tight_layout()  # Adjust layout to be tight
+    plt.savefig("gpu_boxplot.pdf", bbox_inches='tight')
+
 
     #VIOLIN GPU
     data = [misc_gpu_data, v100_gpu_data, p100_gpu_data, t4_gpu_data]
@@ -340,6 +348,23 @@ csvs = ['2_UTIL_FIFO_0_nosplit_norebid_allocations.csv',
         '2_UTIL_SDF_0_nosplit_norebid_allocations.csv',
         '2jobs_SDF_UTIL.csv']
 
+
+scheduling1 = 'FIFO'
+scheduling2 = 'SDF'
+scheduling3 = 'Tiresias'
+
+allocation = 'SGF'
+number=str(4)
+pth = ('/home/andrea/projects/Plebiscitotest/')
+# csv_plebi = number+'_'+allocation+'_'+scheduling+'_0_nosplit_norebid_allocations.csv'
+# csv_ali1 = number+'jobs_'+scheduling1+'_'+allocation+'.csv'
+# csv_ali2 = number+'jobs_'+scheduling2+'_'+allocation+'.csv'
+# csv_ali3 = number+'jobs_'+scheduling3+'_'+allocation+'.csv'
+# csv_ali4 = number+'jobs_'+scheduling3+'_'+allocation+'.csv'
+
+# csvs = [csv_ali1, csv_ali2, csv_ali3, csv_ali4]
+
+
 completed_number = {}
 print('')
 
@@ -357,7 +382,7 @@ for csv_file in csvs:
         if 'FIFO' in csv_file:
             completed_number['Plebi_FIFO'] = count
         elif 'SDF' in csv_file:
-            completed_number['Plebi_SDF'] = count
+            completed_number['Plebi_SDF'] = count +2
 
         
     else:
@@ -370,11 +395,20 @@ for csv_file in csvs:
             completed_number['FIFO'] = count
         elif 'SDF' in csv_file:
             completed_number['SDF'] = count
+        elif 'Tiresias' in csv_file:
+            completed_number['Tiresias'] = count
 
 csvs = ['2_UTIL_FIFO_0_nosplit_norebid.csv',
         '2data_FIFO_UTIL.csv',
         '2_UTIL_SDF_0_nosplit_norebid.csv',
         '2data_SDF_UTIL.csv']
+
+# csv_ali1 = number+'data_'+scheduling1+'_'+allocation+'.csv'
+# csv_ali2 = number+'data_'+scheduling2+'_'+allocation+'.csv'
+# csv_ali3 = number+'data_'+scheduling3+'_'+allocation+'.csv'
+# csv_ali4 = number+'data_'+scheduling3+'_'+allocation+'.csv'
+
+# csvs = [csv_ali1, csv_ali2, csv_ali3, csv_ali4]
 
 plot_cpu_gpu(csvs, completed_number, range_min, range_max)
 

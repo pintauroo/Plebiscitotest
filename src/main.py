@@ -36,8 +36,8 @@ def generate_node_failures(n_nodes, n_failures, n_jobs):
 
 
 if __name__ == '__main__':
-    NUM_JOBS = 1000 #args.num_jobs
-    n_nodes = 50
+    NUM_JOBS = 200 #args.num_jobs
+    n_nodes = 8
     n_failure = 0
     
     # # ------ START FROM ALIBABA -------
@@ -108,46 +108,46 @@ if __name__ == '__main__':
     # # ------ START ALIBABA SIMULATION -------
     
     # for alloc_policy in [0, 1, 2, 4, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-    for alloc_policy in [0, 8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-    # for alloc_policy in [8]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
-        # for preempt_policy in [2]:  # 2LGF
-        preempt_policy =2
-        for sorting_policy in [0, 1, 2, 3]:  
-        # for sorting_policy in [3]:  
-            print('INIT,', str(alloc_policy),', ', str(sorting_policy))
+    # for alloc_policy in [0, 8, 16]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py) 16exec time
+    # # for alloc_policy in [16]:  # 0SDF, 1SJU, 2SJG, 4SJGG, 8FIFO (see utils.py)
+    #     # for preempt_policy in [2]:  # 2LGF
+    #     preempt_policy =2
+    #     for sorting_policy in [1, 2, 3]:  
+    #     # for sorting_policy in [3]:  
+    #         print('INIT,', str(alloc_policy),', ', str(sorting_policy))
 
-            key = (alloc_policy, preempt_policy)
-            print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
+    #         key = (alloc_policy, preempt_policy)
+    #         print_key = "(%-4s,%4s)" % (ALLOC_POLICY_DICT.get(key[0]), PREEMPT_POLICY_DICT.get(key[1]))
 
-            # running
-            start_time = time.time()
-            print_fn("\n###### %s ######" % print_key)
+    #         # running
+    #         start_time = time.time()
+    #         print_fn("\n###### %s ######" % print_key)
 
-            simulator = Simulator(
-                csv_file=CSV_FILE_PATH / CSV_FILE,
-                alloc_policy=alloc_policy,
-                preempt_policy=preempt_policy,
-                sort_node_policy=sorting_policy,
-                num_nodes=NUM_NODES,
-                random_seed=RANDOM_SEED,
-                max_time=MAX_TIME,
-                num_spare_node=NUM_SPARE_NODE,
-                pattern=PATTERN,
-                hetero=HETERO,
-                num_gpus=NUM_GPUS,
-                num_cpus=NUM_CPUS,
-                describe_file=describe_file,
-                log_file=log_file,
-                export_job_stats=EXPORT_JOB_STATS,
-                export_cluster_util=EXPORT_CLUSTER_UTIL,
-                arrival_rate=ARRIVAL_RATE,
-                num_jobs_limit=NUM_JOBS,
-                gpu_type_matching=GPU_TYPE_MATCHING,
-                verbose=VERBOSE,
-                dataset=dataset,
-                repetition=rep)
-            results = simulator.simulator_go(repeat=REPEAT)
-            print('done,', str(alloc_policy),', ', str(sorting_policy))
+    #         simulator = Simulator(
+    #             csv_file=CSV_FILE_PATH / CSV_FILE,
+    #             alloc_policy=alloc_policy,
+    #             preempt_policy=preempt_policy,
+    #             sort_node_policy=sorting_policy,
+    #             num_nodes=NUM_NODES,
+    #             random_seed=RANDOM_SEED,
+    #             max_time=MAX_TIME,
+    #             num_spare_node=NUM_SPARE_NODE,
+    #             pattern=PATTERN,
+    #             hetero=HETERO,
+    #             num_gpus=NUM_GPUS,
+    #             num_cpus=NUM_CPUS,
+    #             describe_file=describe_file,
+    #             log_file=log_file,
+    #             export_job_stats=EXPORT_JOB_STATS,
+    #             export_cluster_util=EXPORT_CLUSTER_UTIL,
+    #             arrival_rate=ARRIVAL_RATE,
+    #             num_jobs_limit=NUM_JOBS,
+    #             gpu_type_matching=GPU_TYPE_MATCHING,
+    #             verbose=VERBOSE,
+    #             dataset=dataset,
+    #             repetition=rep)
+    #         results = simulator.simulator_go(repeat=REPEAT)
+    #         print('done,', str(alloc_policy),', ', str(sorting_policy))
             
     # # ------ END ALIBABA SIMULATION -------
     
@@ -156,9 +156,12 @@ if __name__ == '__main__':
 
     # utils = ['SPEEDUP', 'SPEEDUPV2', "LGF", "UTIL"]  
     utils = ["UTIL", "SGF"]
-    sched = ['FIFO', 'SDF']
+    sched = ['Tiresias', 'FIFO', 'SDF']
+    utils = ['SGF', 'LGF', 'UTIL']
+
     split = [False]
-    rebid = [False]
+    # rebid = [False]
+    rebid = [True]
     # dec_factor = [0, .25, .5, .75, 1]
     dec_factor = [0]
 

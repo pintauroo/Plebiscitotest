@@ -82,6 +82,7 @@ class Cluster:
         return node_list
 
     def tic_job(self, delta=1):
+        print('\n---- tic_job')
         # Unlike tic_svc(), it receives simulator's cur_time as its own cur_time
         # Here it returns a "cur_time" value to the simulator
         # If succeed: return cur_time >= 0
@@ -94,11 +95,12 @@ class Cluster:
         job_runn_list = self.job_runn_list
         if len(job_runn_list) > 0:
             for job in job_runn_list:
+                print('-- ',job['job_id'], job['execution_time'] if 'execution_time' in job else None, job['node'] if 'node' in job else None, job['status'] if 'status' in job else None)
                 job['on_time'] += delta
                 job['progress'] = job['on_time'] * job['num_gpu']
                 
                 # Job done logic
-                if job['on_time'] >= job['duration']:
+                if  job['execution_time'] >= job['duration'] or job['on_time'] >= job['duration']:
                     over_tic_time = job['on_time'] - job['duration']  # only if delta > 1
                     job['on_time'] -= over_tic_time
                     job['progress'] -= over_tic_time * job['num_gpu']

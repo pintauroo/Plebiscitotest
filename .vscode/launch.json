@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "/home/andrea/projects/Plebiscitotest/src/main.py",
-            "args": ["3"],
+            "args": ["4"],
             "console": "integratedTerminal",
             // "python": "/home/andrea/Plebiscitotest/.venv/bin/python"
         }

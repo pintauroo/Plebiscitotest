@@ -109,18 +109,18 @@ class Simulator:
         # for _ in range(10):  # low-ended machines first
         #     node_list.append(Node(node_id, 0, 96, gpu_type='CPU'))
         #     node_id += 1
-        for _ in range(10):  # low-ended machines first
+        for _ in range(1):  # low-ended machines first
             node_list.append(Node(node_id, 8, 96, gpu_type='MISC'))
             node_id += 1
-        for _ in range(18):  # low-ended machines first
-            node_list.append(Node(node_id, 2, 96, gpu_type='T4'))
-            node_id += 1
-        for _ in range(19):  # low-ended machines first
-            node_list.append(Node(node_id, 2, 64, gpu_type='P100'))
-            node_id += 1
-        for _ in range(3):
-            node_list.append(Node(node_id, 8, 96, gpu_type='V100'))
-            node_id += 1
+        # for _ in range(18):  # low-ended machines first
+        #     node_list.append(Node(node_id, 2, 96, gpu_type='T4'))
+        #     node_id += 1
+        # for _ in range(19):  # low-ended machines first
+        #     node_list.append(Node(node_id, 2, 64, gpu_type='P100'))
+        #     node_id += 1
+        # for _ in range(3):
+        #     node_list.append(Node(node_id, 8, 96, gpu_type='V100'))
+        #     node_id += 1
         return node_list
 
     def init_go(self, num_jobs=None):
@@ -203,7 +203,7 @@ class Simulator:
         return num_jobs_done, jct_summary, wait_time_summary
     
     def policy_name_converter(self, alloc_policy, sorting_policy):
-        alloc_policy_names = {0: 'SDF', 8: 'FIFO'}
+        alloc_policy_names = {0: 'SDF', 8: 'FIFO', 16: 'Tiresias'}
         sorting_policy_names = {0: 'ID', 1: 'SGF', 2: 'LGF', 3: 'UTIL'}
 
         alloc_name = alloc_policy_names.get(alloc_policy, 'Unknown Alloc Policy')
@@ -272,15 +272,16 @@ class Simulator:
     def tic(self, delta=1):
         if self.cur_time < self.max_time:
             self.cluster.tic_svc(self.cur_time)
-
+            print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
             # Preempt job
-            # self.scheduler.preempt_job(self.cluster)
+            if self.alloc_policy == 16:
+                self.scheduler.preempt_job_tiresias(self.cluster)
 
             # Allocate job
             stop = self.scheduler.alloc_job(self.cluster)
 
-            if stop == -1:
-                self.exit_flag = 1 
+            # if stop == -1: # stop when last job allocated!
+            #     self.exit_flag = 1 
                 # print('KTM!!!!')
 
             if stop == -2:
@@ -292,6 +293,7 @@ class Simulator:
             # else:
                 # Jobs tic and global cur_time += delta
             tic_return_value = self.cluster.tic_job(delta)
+           
             if tic_return_value >= 0:
                 self.cur_time = tic_return_value
             else:
